@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickFinance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Global Styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 85%;
+            max-width: 900px;
+            margin: auto;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease-in-out;
+        }
+
+        header {
+            background: linear-gradient(to right, #007bff, #0056b3);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .content {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 26px;
+            font-weight: 600;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 16px;
+            color: #444;
+            margin-bottom: 15px;
+        }
+
+        ul {
+            text-align: left;
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        ul li {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Buttons */
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .buttons button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .accept {
+            background: #28a745;
+            color: white;
+        }
+
+        .accept:hover {
+            background: #218838;
+            transform: scale(1.05);
+        }
+
+        .reject {
+            background: #dc3545;
+            color: white;
+        }
+
+        .reject:hover {
+            background: #c82333;
+            transform: scale(1.05);
+        }
+
+        .settings {
+            background: #007bff;
+            color: white;
+        }
+
+        .settings:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+
+        /* Footer */
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 40px;
+            font-size: 14px;
+            border-radius: 15px 15px 0 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                width: 95%;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .buttons button {
+                width: 100%;
+                margin: 5px 0;
+            }
+
+            h2 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        QuickFinance
+    </header>
+
+    <section class="content">
+        <div class="container">
+            <h2>Our Mission</h2>
+            <p>QuickFinance's mission is to make financial services more inclusive through technology. They offer secure, easy-to-use, and affordable financial services with a super-fast user experience.</p>
+            <ul>
+                <li>Amazing incentive packages on transfers, airtime, and data top-ups.</li>
+                <li>Innovative products that offer daily interest on balances.</li>
+                <li>Reliable debit cards with no charges.</li>
+                <li>Excellent resolution experience for any issues.</li>
+            </ul>
+            <p>With a QuickFinance account, you can have full control of your finances, payments, and transactions, all on one platform.</p>
+            <p>Visit our <a href="https://www.quickfinance.com/">website</a> to learn more.</p>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container">
+            <h2>Cookie Settings</h2>
+            <p>We use cookies to personalize content and ads, provide social media features, and analyze our traffic. By clicking "Accept", you consent to our cookies.</p>
+            <div class="buttons">
+                <button class="accept" onclick="window.location.href='accounts:login.html'">Accept All</button>
+                <button class="reject">Reject All</button>
+                <button class="settings">Cookie Settings</button>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        QuickFinance &copy; 2024
+    </footer>
+</body>
+</html>

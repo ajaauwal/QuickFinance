@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<!-- Search Bar -->
+<div class="position-relative">
+    <input type="text" id="search-box" class="form-control" placeholder="Search services..." autocomplete="off">
+    <div id="search-results" class="dropdown-menu w-100"></div>
+</div>
+
+<!-- JavaScript for Real-Time Search -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const searchBox = document.getElementById("search-box");
+    const searchResults = document.getElementById("search-results");
+
+    searchBox.addEventListener("input", function () {
+        let query = searchBox.value.trim();
+        if (query.length < 2) {
+            searchResults.innerHTML = "";
+            searchResults.style.display = "none";
+            return;
+        }
+
+        fetch(`/services/search/?q=${query}`)
+            .then(response => response.json())
+            .then(data => {
+                searchResults.innerHTML = "";
+                if (data.results.length > 0) {
+                    searchResults.style.display = "block";
+                    data.results.forEach(service => {
+                        let item = document.createElement("a");
+                        item.href = `/services/${service.id}/`;
+                        item.className = "dropdown-item";
+                        item.innerHTML = `<strong>${service.name}</strong> <br> <small class="text-muted">${service.category}</small>`;
+                        searchResults.appendChild(item);
+                    });
+                } else {
+                    searchResults.innerHTML = "<div class='dropdown-item text-muted'>No results found</div>";
+                    searchResults.style.display = "block";
+                }
+            })
+            .catch(error => console.error("Error fetching search results:", error));
+    });
+
+    // Hide results when clicking outside
+    document.addEventListener("click", function (e) {
+        if (!searchBox.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.style.display = "none";
+        }
+    });
+});
+</script>
+{% endblock %}

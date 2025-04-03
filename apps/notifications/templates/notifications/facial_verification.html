@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Facial Verification</title>
+</head>
+<body>
+    <h2>Facial Verification</h2>
+    <video id="video" width="640" height="480" autoplay></video>
+    <button id="captureButton">Capture</button>
+    <canvas id="canvas" style="display: none;"></canvas>
+    
+    <script>
+        // Access the device camera
+        async function startCamera() {
+            const video = document.getElementById('video');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error('Error accessing the camera: ', err);
+                alert('Unable to access the camera. Please ensure the camera is available and allowed.');
+            }
+        }
+
+        // Capture a frame from the video
+        document.getElementById('captureButton').addEventListener('click', async () => {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert the canvas image to a data URL (base64)
+            const imageData = canvas.toDataURL('image/png');
+            console.log('Captured Image Data:', imageData);
+            
+            // Send image data to the backend for processing
+            // You can use fetch or XMLHttpRequest to make an AJAX call to your Django server
+            const response = await fetch('/verify_facial_image/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: imageData }),
+            });
+            const result = await response.json();
+            console.log(result);
+        });
+
+        // Start the camera when the page loads
+        window.onload = startCamera;
+    </script>
+</body>
+</html>

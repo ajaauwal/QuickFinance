@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h2 class="mb-3">Search Results for "<span class="text-primary">{{ query }}</span>"</h2>
+
+        {% if results %}
+            <ul class="list-group">
+                {% for service in results %}
+                    <li class="list-group-item">
+                        <a href="{% url 'services:service_detail' service.slug %}" class="text-decoration-none">
+                            <strong>{{ service.name }}</strong>
+                        </a><br>
+                        <small class="text-muted">Category: {{ service.category }}</small>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="alert alert-warning" role="alert">
+                No results found for "<strong>{{ query }}</strong>". Try searching for something else.
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

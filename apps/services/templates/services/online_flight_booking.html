@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load static %}
+<
+
+<div class="container">
+    <span class="close-btn" onclick="closeAirlineBookingForm()">×</span>
+    <h2>Airline Booking</h2>
+
+   <!-- Main Action Buttons -->
+<div class="main-buttons">
+    <!-- Book Flight Section -->
+    <div class="button-section" style="text-align: center; margin-bottom: 20px;">
+        <h3>Book Flight</h3>
+        <!-- Updated Button Links -->
+        <a href="{% url 'services:airport_search' %}" class="action-button">Airport Search</a>
+        <a href="{% url 'services:book_flight' %}" class="action-button">Book Flight</a>
+        <a href="{% url 'services:search_flights' %}" class="action-button"> Search Flights</a> <!-- Updated link to flight search results -->
+    </div>
+
+    <!-- Manage Booking Section -->
+<div class="button-section" style="text-align: center; margin-bottom: 20px;">
+    <h3>Manage Booking</h3>
+    {% if booking.id %}
+        <a href="{% url 'services:booking_confirmation' booking_id=booking.id %}" class="action-button">Booking Confirmation</a>
+        <a href="{% url 'services:manage_booking' %}" class="action-button">Manage Booking</a>
+        <a href="{% url 'services:update_booking' booking_id=booking.id %}" class="action-button">Update Booking</a> <!-- Updated link to include booking_id -->
+        <a href="{% url 'services:cancel_booking' booking_id=booking.id %}" class="action-button">Cancel Booking</a> <!-- Updated Cancel Booking link -->
+        <a href="{% url 'services:checkin_links' flight_id=booking.flight %}" class="action-button">Check-in Links</a> <!-- Updated Check-in Links with flight_id -->
+    {% else %}
+        <p>No booking found.</p>
+    {% endif %}
+</div>
+
+<!-- Airline Booking Form -->
+<div class="form-section">
+    <h3>Book Your Flight</h3>
+    <form method="POST" action="{% url 'services:book_flight' %}">
+        {% csrf_token %}
+        <button type="submit" id="book-flight-btn" onclick="showBookingOptions(event)">Book Flight</button>
+    </form>
+</div>
+
+    <!-- Success/Error messages -->
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="error-message">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<script src="{% static 'js/scripts.js' %}"></script> <!-- Link to your JavaScript file -->
+
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        color: white;
+        overflow: hidden; /* Prevent scrollbars */
+    }
+
+    /* Fullscreen video background */
+    #bg-video {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: -2;
+    }
+
+    /* Black transparent overlay */
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: -1;
+    }
+
+    .container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+        padding: 20px;
+    }
+
+    h2 {
+        font-size: 2.5rem;
+        color: white;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 4px 6px rgba(0, 0, 0, 0.4);
+        margin-bottom: 20px;
+    }
+
+    .button-links {
+        margin-bottom: 20px;
+    }
+
+    .action-button {
+        display: inline-block;
+        background-color: #007bff;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin: 10px;
+        text-decoration: none;
+        font-size: 1rem;
+        transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out;
+    }
+
+    .action-button:hover {
+        background-color: #0056b3;
+        transform: translateY(-4px);
+    }
+
+    .form-section {
+        background: rgba(0, 0, 0, 0.5);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        text-align: center;
+        max-width: 500px;
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    .form-section h3 {
+        font-size: 2rem;
+        color: #f5f5f5;
+    }
+
+    button[type="submit"] {
+        background-color: #28a745;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out;
+    }
+
+    button[type="submit"]:hover {
+        background-color: #218838;
+        transform: translateY(-4px);
+    }
+
+    /* Success/Error messages */
+    .messages {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .error-message {
+        background-color: #dc3545;
+        color: white;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+    }
+
+    /* Close button (X) styling */
+    .close-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 30px;
+        color: #ffffff;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        z-index: 1000;
+    }
+
+    .close-btn:hover {
+        color: #ff0000;
+    }
+</style>
+
+<script>
+    // Close button functionality
+    function closeAirlineBookingForm() {
+        const container = document.querySelector('.container');
+        const videoBackground = document.querySelector('.video-background');
+
+        if (container) {
+            container.style.display = 'none'; // Hide the form container
+        }
+
+        if (videoBackground) {
+            videoBackground.style.display = 'none'; // Hide the video background
+        }
+
+        // Redirect to the dashboard page in the accounts app
+        window.location.href = "{% url 'accounts:dashboard' %}"; // Ensure 'dashboard' matches your URL name
+    }
+
+    // Show booking options functionality
+    function showBookingOptions(event) {
+        event.preventDefault(); // Prevent the default form submission behavior
+
+        const flightServices = document.getElementById('flight-services'); // Ensure the element with this ID exists
+        if (flightServices) {
+            flightServices.style.display = 'block'; // Show the flight services section
+        } else {
+            console.error("Element with ID 'flight-services' not found.");
+        }
+    }
+</script>
+{% endblock %}

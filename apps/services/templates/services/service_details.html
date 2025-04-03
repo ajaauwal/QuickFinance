@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* General Reset */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+    }
+
+    /* Body Styling */
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        color: #ffffff;
+        background-color: #006994; /* Ocean Blue background */
+        overflow-x: hidden;
+        font-size: 16px;
+    }
+
+    /* Main Content Styling */
+    .main-content {
+        margin: 70px auto 0;
+        padding: 20px;
+        max-width: 800px;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.5); /* Transparent background */
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    .services-section h1 {
+        font-size: 2em;
+        margin-bottom: 20px;
+        color: #fff;
+    }
+
+    /* Service List */
+    .service-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+    }
+
+    /* Service Link Button */
+    .service-link {
+        display: inline-block;
+        padding: 12px 20px;
+        width: 100%;
+        max-width: 300px;
+        background: #0289d1;
+        color: #fff;
+        text-decoration: none;
+        font-size: 1.1em;
+        border-radius: 6px;
+        text-align: center;
+        transition: background 0.3s, transform 0.2s;
+    }
+
+    .service-link:hover {
+        background: #0277b8;
+        transform: scale(1.05);
+    }
+</style>
+
+<div class="main-content">
+    <!-- Services Section -->
+    <div class="services-section">
+        <h1>Our Services</h1>
+    </div>
+
+   
+
+        <!-- Newly Added Services -->
+        <a href="{% url 'services:electricity_payment' %}" class="service-link">💡 Electricity Bill</a>
+        <a href="{% url 'services:purchase_airtime' %}" class="service-link">📱 Airtime Recharge</a>
+        <a href="{% url 'services:data_topup' %}" class="service-link">🌐 Data Top-Up</a>
+        <a href="{% url 'services:dstv_payment' %}" class="service-link">📺 DSTV</a>
+        <a href="{% url 'services:gotv_payment' %}" class="service-link">📡 GOTV</a>
+        <a href="{% url 'services:startimes_payment' %}" class="service-link">⭐ Startimes</a>
+        <a href="{% url 'services:school_fees_payment' %}" class="service-link">🏫 School Fees Payment</a>
+        <a href="{% url 'services:waec_result_checker' %}" class="service-link">📜 WAEC Result Checker</a>
+        <a href="{% url 'transactions:transfer' %}" class="service-link">🔄 Transfer Funds</a>
+        <a href="{% url 'transactions:add_money' %}" class="service-link">➕ Add Money</a>
+        <a href="{% url 'services:flight_booking' %}">Flight Booking</a>
+    </div>
+</div>
+
+{% endblock %}

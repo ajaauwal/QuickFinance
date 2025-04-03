@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="main-content">
+    <div id="content" class="content">
+        <h1>Profile</h1>
+
+        <style>
+            body {
+                font-family: 'Arial', sans-serif;
+                margin: 0;
+                padding: 0;
+                background: rgba(0, 0, 0, 0.8);
+                color: #333;
+            }
+
+            .profile-container {
+                margin: 20px auto;
+                padding: 20px;
+                max-width: 600px;
+                background: #fff;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                border-radius: 8px;
+            }
+
+            .profile-container h2 {
+                color: #007BFF;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .profile-section {
+                margin-bottom: 30px;
+            }
+
+            .profile-section h3 {
+                color: #007BFF;
+                margin-bottom: 10px;
+            }
+
+            .profile-details {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            .form-buttons {
+                margin-top: 20px;
+                text-align: center;
+            }
+
+            .form-buttons button {
+                background-color: #007BFF;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                cursor: pointer;
+                border-radius: 5px;
+                font-size: 14px;
+                transition: background-color 0.3s ease;
+            }
+
+            .form-buttons button:hover {
+                background-color: #0056b3;
+            }
+
+            .edit-button {
+                background-color: #007BFF;
+                color: white;
+                border: none;
+                padding: 10px;
+                cursor: pointer;
+                border-radius: 5px;
+                font-size: 14px;
+                margin-top: 10px;
+                display: inline-block;
+            }
+
+            .edit-button:hover {
+                background-color: #0056b3;
+            }
+
+            .value {
+                display: inline-block;
+                padding: 5px 10px;
+                background-color: #f0f0f0;
+                border-radius: 5px;
+            }
+
+            .footer-container {
+                background-color: hsl(20, 65%, 86%);
+                color: #ffffff;
+                text-align: center;
+                padding: 20px;
+                border-top: 4px solid #ffffff;
+                height: 100px; /* Set height to make it square */
+            }
+
+            .footer-links {
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin-bottom: 15px;
+            }
+
+            .footer-links a {
+                color: #00aaff;
+                text-decoration: none;
+                font-weight: bold;
+                transition: color 0.3s ease;
+            }
+
+            .footer-links a:hover {
+                color: #ffffff;
+            }
+
+            .footer-social {
+                margin-bottom: 15px;
+            }
+
+            .footer-social a img {
+                width: 30px;
+                height: 30px;
+                margin: 0 10px;
+                transition: transform 0.3s ease;
+            }
+
+            .footer-social a img:hover {
+                transform: scale(1.2);
+            }
+
+            .footer-bottom {
+                font-size: 14px;
+            }
+        </style>
+
+        <div class="profile-container">
+            <h2>Profile Details</h2>
+
+            <form action="{% url 'transactions:update_profile' %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="profile-section">
+                    <h3>Personal Information</h3>
+                    <div class="profile-details">
+                        {{ form.first_name }}
+                        {{ form.last_name }}
+                        {{ form.username }}
+                        {{ form.gender }}
+                        {{ form.registration_number }}
+                        {{ form.school }}
+                        {{ form.department }}
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Contact Information</h3>
+                    <div class="profile-details">
+                        {{ form.email }}
+                        {{ form.phone }}
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Security Settings</h3>
+                    <div class="profile-details">
+                        <label for="password">Change Password</label>
+                        <button class="edit-button" type="button" data-url="{% url 'transactions:change_password' %}" onclick="navigateToUrl(this)">Change Password</button>
+
+                        <label>Device Fingerprint</label>
+                        <div class="value">{{ user.profile.device_fingerprint_enabled|yesno:"Enabled,Disabled" }}</div>
+
+                        <label>Authenticate Transactions Without OTP</label>
+                        <div class="value">{{ user.profile.otp_authentication|yesno:"Enabled,Disabled" }}</div>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Address</h3>
+                    <div class="profile-details">
+                        {{ form.country }}
+                        {{ form.state }}
+                        {{ form.city }}
+                        {{ form.address_line_1 }}
+                        {{ form.address_line_2 }}
+                    </div>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit">Save Profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_styles %}
+
+<script>
+    function navigateToUrl(button) {
+        const url = button.getAttribute('data-url');
+        window.location.href = url;
+    }
+</script>
+{% endblock %}

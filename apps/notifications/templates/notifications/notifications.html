@@ -1,0 +1,18 @@
+<!-- notifications/templates/notifications/notifications.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Your Notifications</h2>
+    <ul>
+        {% for notification in notifications %}
+            <li class="{% if not notification.is_read %}unread{% else %}read{% endif %}">
+                <p>{{ notification.message }}</p>
+                {% if not notification.is_read %}
+                    <a href="{% url 'notifications:mark_as_read' notification.id %}">Mark as read</a>
+                {% endif %}
+            </li>
+        {% empty %}
+            <p>You have no notifications.</p>
+        {% endfor %}
+    </ul>
+{% endblock %}

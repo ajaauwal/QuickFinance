@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2>Pay with Wallet</h2>
+
+    <div class="wallet-balance">
+        <p>Current Balance: <strong>${{ user.profile.wallet_balance }}</strong></p>
+    </div>
+
+    <form method="post" action="{% url 'transactions:process_wallet_payment' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="amount">Amount to Pay</label>
+            <input type="number" class="form-control" id="amount" name="amount" min="1" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Pay Now</button>
+    </form>
+</div>
+<style>
+    /* General Reset */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+    }
+
+    /* Body Styling */
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        color: #ffffff;
+        background-color: #006994; /* Ocean Blue background */
+        overflow-x: hidden;
+        font-size: 16px;
+    }
+
+    /* Main Content Styling */
+    .main-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Auto-adjust to screen size with minimum width of 280px per card */
+    gap: 20px;  /* Space between cards */
+    justify-items: center; /* Center items horizontally */
+    align-items: center; /* Center items vertically */
+    margin-top: 20px; /* Space between wallet information and service cards */
+    position: relative; /* Avoid fixed position to allow scrolling */
+    padding: 20px;
+    background: rgba(2, 137, 209, 0.05); /* Slight background color for separation */
+    color: #fff;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
+    border-radius: 10px; /* Add rounded corners */
+    z-index: 1; /* Ensure this stays above other content */
+    max-width: 1000px;
+    width: 100%;
+    margin-left: 90px; /* Adjust left margin to match the sidebar */
+    }
+
+    .main-content .content {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .main-content .content h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        color: #ffffff;
+    }
+
+    .main-content .content p {
+        font-size: 1.2em;
+        color: #ffffff;
+    }
+
+    /* Form Styling */
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    /* Button Styling */
+    button {
+        background-color: #0288d1;
+        color: #fff;
+        font-size: 1.1em;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        width: 100%;
+    }
+
+    button:hover {
+        background-color: #ff6200; 
+    }
+
+    button:focus {
+        outline: none;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0);
+    }
+
+    /* Error Message Styling */
+    .alert-danger {
+        background-color: #ffcccb;
+        color: #d32f2f;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        font-weight: bold;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .main-content {
+            margin-left: 220px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .main-content {
+            margin: 0;
+        }
+
+        .main-content .content h1 {
+            font-size: 2em;
+        }
+
+        .form-wallet-container {
+            width: 90%;
+            padding: 20px;
+        }
+    }
+</style>
+{% endblock %}

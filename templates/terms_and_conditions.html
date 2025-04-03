@@ -1,0 +1,194 @@
+{% extends 'base.html' %} 
+{% load static %}
+
+{% block content %}
+<div class="video-background">
+    <video autoplay muted loop id="bg-video">
+        <source src="{% static 'videos/background2.mp4' %}" type="video/mp4">
+        Your browser does not support HTML5 video.
+    </video>
+    <div class="overlay"></div>
+</div>
+
+<header>
+    <nav>
+        <div class="logo">
+            <a href="/">Quickfinance</a>
+        </div>
+        <ul>
+            <li><a href="#terms">Terms & Conditions</a></li>
+            <li><a href="/">Home</a></li>
+            <li><a href="/contact">Contact</a></li>
+        </ul>
+    </nav>
+</header>
+
+<section id="terms" class="terms-section">
+    <div class="container">
+        <button class="close-btn" aria-label="Close" onclick="closePage()">&times;</button>
+        <h1>Terms and Conditions</h1>
+        <p>Welcome to Quickfinance. These Terms and Conditions govern your use of our services.</p>
+
+        <h2>1. Acceptance of Terms</h2>
+        <p>By accessing or using Quickfinance, you agree to comply with these Terms and all applicable laws.</p>
+
+        <h2>2. Services Provided</h2>
+        <p>Quickfinance offers services like Airtime Recharge, Bill Payments, and Funds Transfers.</p>
+
+        <h2>3. User Account</h2>
+        <p>Creating an account? Keep your login credentials secure.</p>
+
+        <h2>4. Payment Processing</h2>
+        <p>We use third-party payment processors; Quickfinance is not responsible for any issues that arise.</p>
+
+        <h2>5. Privacy Policy</h2>
+        <p>Your privacy matters. Check our Privacy Policy for more details.</p>
+
+        <h2>6. Termination</h2>
+        <p>Violation of our Terms may result in termination of your account.</p>
+    </div>
+</section>
+
+<footer>
+    <div class="footer-container">
+        <p>&copy; 2024 Quickfinance. All Rights Reserved.</p>
+    </div>
+</footer>
+
+<script>
+function closePage() {
+    window.location.href = '/'; 
+}
+</script>
+
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        margin: 0;
+        padding: 0;
+        color: #fff;
+        overflow-x: hidden;
+    }
+    
+    #bg-video {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: -2;
+    }
+    
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: -1;
+    }
+    
+    header {
+        background: rgba(0, 0, 0, 0.6);
+        padding: 15px 20px;
+        position: fixed;
+        width: 100%;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+    }
+    
+    nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .logo a {
+        color: #fff;
+        font-size: 24px;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    
+    nav ul {
+        list-style: none;
+        display: flex;
+        gap: 15px;
+    }
+    
+    nav ul li a {
+        color: #fff;
+        text-decoration: none;
+        font-size: 16px;
+        padding: 8px 12px;
+        transition: all 0.3s ease;
+        border-radius: 6px;
+    }
+    
+    nav ul li a:hover {
+        background: #28a745;
+    }
+    
+    .terms-section {
+        padding: 80px 20px;
+        margin-top: 100px;
+    }
+    
+    .container {
+        max-width: 800px;
+        margin: auto;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 30px;
+        border-radius: 12px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 4px 10px rgba(255, 255, 255, 0.2);
+    }
+    
+    h1, h2 {
+        color: #fff;
+    }
+    
+    p, a {
+        color: #ddd;
+    }
+    
+    .close-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 26px;
+        color: #fff;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .close-btn:hover {
+        transform: scale(1.2);
+        color: #ff0000;
+    }
+    
+    footer {
+        background-color: #222;
+        color: #fff;
+        text-align: center;
+        padding: 15px;
+        position: relative;
+        bottom: 0;
+        width: 100%;
+    }
+    
+    @media (max-width: 768px) {
+        nav ul {
+            flex-direction: column;
+        }
+        
+        .terms-section {
+            padding: 40px 15px;
+        }
+    }
+</style>
+{% endblock %}

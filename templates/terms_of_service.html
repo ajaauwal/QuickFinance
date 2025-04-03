@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="video-background">
+    <video autoplay muted loop id="bg-video">
+        <source src="{% static 'videos/background2.mp4' %}" type="video/mp4">
+        Your browser does not support HTML5 video.
+    </video>
+    <div class="overlay"></div>
+    <div class="content">
+        <button class="close-btn" onclick="closePage()">&times;</button>
+        <h1>Terms of Service</h1>
+        <div class="terms-content">
+            <h2>Acceptance of Terms</h2>
+            <p>By using our services, you agree to these terms of service. If you do not agree, please do not use our services.</p>
+
+            <h2>Account Responsibilities</h2>
+            <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account.</p>
+
+            <h2>Service Usage</h2>
+            <p>Our services may only be used for lawful purposes. Any illegal activities will result in immediate termination of your account.</p>
+
+            <h2>Limitation of Liability</h2>
+            <p>We are not liable for any indirect, incidental, or consequential damages arising from the use of our services.</p>
+
+            <h2>Changes to the Terms</h2>
+            <p>We reserve the right to modify these terms at any time. Any changes will be posted on this page.</p>
+
+            <h2>Contact Us</h2>
+            <p>If you have any questions, please contact us at support@maaunquickfinance.com.</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Fullscreen Video Background */
+    #bg-video {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: -2;
+    }
+
+    /* Blurred Glass Effect */
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        backdrop-filter: blur(10px);
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
+    }
+
+    /* Content Styling */
+    .content {
+        position: relative;
+        z-index: 2;
+        color: #fff;
+        text-align: center;
+        padding: 40px;
+        max-width: 900px;
+        margin: auto;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease-in-out;
+    }
+
+    .content:hover {
+        transform: scale(1.02);
+    }
+
+    .content h1 {
+        font-size: 42px;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+
+    .content h2 {
+        font-size: 26px;
+        margin-top: 20px;
+        font-weight: 600;
+    }
+
+    .content p {
+        font-size: 18px;
+        line-height: 1.8;
+        margin: 15px 0;
+    }
+
+    /* Close Button Styling */
+    .close-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 28px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        padding: 10px 15px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background 0.3s ease-in-out;
+    }
+
+    .close-btn:hover {
+        background: rgba(255, 0, 0, 0.6);
+    }
+</style>
+
+<script>
+    // Close Button Functionality
+    function closePage() {
+        document.querySelector('.video-background').style.display = 'none';
+        window.location.href = '/'; // Redirect to homepage
+    }
+</script>
+
+{% endblock %}

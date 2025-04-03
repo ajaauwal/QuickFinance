@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<title>Transfer Money</title>
+
+<div class="main-container">
+    <div class="right-panel">
+        <h1>Transfer Money</h1>
+
+        {% if insufficient_balance %}
+        <div class="alert alert-danger">Insufficient Wallet Balance!</div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'transactions:transfer' %}" class="withdraw-form" id="withdrawForm">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="amount">Amount:</label>
+                <input type="number" name="amount" id="amount" required placeholder="Enter amount">
+            </div>
+
+            <div class="form-group">
+                <label for="account_number">Bank Account Number:</label>
+                <input type="text" name="account_number" id="account_number" required placeholder="Enter bank account number">
+            </div>
+
+            <div class="form-group">
+                <label for="recipient">Recipient:</label>
+                <input type="text" name="recipient" id="recipient" required placeholder="Enter recipient name">
+            </div>
+
+            <div class="form-group">
+                <label for="bank_name">Bank Name:</label>
+                <select name="bank_name" id="bank_name" class="form-control" required>
+                    <option value="">Select a bank</option>
+                    <option value="access">Access Bank</option>
+                    <option value="fcmb">FCMB</option>
+                    <option value="zenith">Zenith Bank</option>
+                    <option value="gtb">Guaranty Trust Bank (GTBank)</option>
+                    <option value="uba">United Bank for Africa (UBA)</option>
+                    <option value="firstbank">First Bank of Nigeria</option>
+                    <option value="stanbic">Stanbic IBTC Bank</option>
+                    <option value="ecobank">Ecobank</option>
+                    <option value="wema">Wema Bank</option>
+                    <option value="fidelity">Fidelity Bank</option>
+                    <option value="polaris">Polaris Bank</option>
+                    <option value="keystone">Keystone Bank</option>
+                    <option value="union">Union Bank of Nigeria</option>
+                    <option value="unity">Unity Bank</option>
+                    <option value="sterling">Sterling Bank</option>
+                    <option value="jaiz">Jaiz Bank</option>
+                    <option value="suntrust">SunTrust Bank</option>
+                    <option value="rubies">Rubies Microfinance Bank</option>
+                    <option value="kuda">Kuda Microfinance Bank</option>
+                    <option value="vfd">VFD Microfinance Bank</option>
+                    <option value="taj">TAJ Bank</option>
+                    <option value="globus">Globus Bank</option>
+                    <option value="providus">Providus Bank</option>
+                    <option value="randmerchant">Rand Merchant Bank</option>
+                    <option value="standardchartered">Standard Chartered Bank</option>
+                    <option value="lotus">Lotus Bank</option>
+                    <option value="parallex">Parallex Bank</option>
+                    <option value="opay">Opay</option>
+                    <option value="palmpay">PalmPay</option>
+                    <option value="carbon">Carbon Bank</option>
+                    <option value="paycom">Paycom (OPay)</option>
+                    <option value="mint">Mint Bank</option>
+                    <option value="eyowo">Eyowo</option>
+                    <option value="moniepoint">Moniepoint Microfinance Bank</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="remark">Remark (Reason for Transfer):</label>
+                <textarea name="remark" id="remark" rows="4" placeholder="Enter reason for transfer" required></textarea>
+            </div>
+
+            <button type="submit" id="submitTransfer">Transfer</button>
+        </form>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_styles %}
+
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+    document.getElementById('withdrawForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const amount = parseFloat(document.getElementById('amount').value);
+        const accountNumber = document.getElementById('account_number').value;
+        const recipient = document.getElementById('recipient').value;
+        const bankName = document.getElementById('bank_name').value;
+        const remark = document.getElementById('remark').value;
+
+        if (isNaN(amount) || amount <= 0) {
+            alert('Please enter a valid amount.');
+            return;
+        }
+
+        if (!accountNumber || !recipient || !bankName || !remark) {
+            alert('All fields are required.');
+            return;
+        }
+
+        const transferData = {
+            amount,
+            account_number: accountNumber,
+            recipient,
+            bank_name: bankName,
+            remark
+        };
+
+        try {
+            const response = await fetch("{% url 'transactions:transfer' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(transferData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('Transfer successful!');
+                window.location.href = "/transactions/verify/" + data.reference + "/";
+            } else {
+                alert('Transfer failed: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error during transfer:', error);
+            alert('An error occurred. Please try again later.');
+        }
+    });
+
+    function closeFundsTransferForm() {
+        const fundstransferContainer = document.querySelector('.fundstransfer-container');
+        const videoBackground = document.querySelector('.video-background');
+
+        if (fundstransferContainer) {
+            fundstransferContainer.style.display = 'none';
+        }
+
+        if (videoBackground) {
+            videoBackground.style.display = 'none';
+        }
+
+        history.back();
+    }
+</script>
+
+<style>
+    /* General Reset */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+    }
+
+    /* Body Styling */
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background-color: #006994; /* Ocean Blue background */
+        overflow-x: hidden;
+        font-size: 16px;
+    }
+
+    /* Right Panel Styling */
+    .right-panel {
+        background-color: #fff;
+        color: #333;
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        margin-top: 50px;
+    }
+
+    .right-panel h1 {
+        text-align: center;
+        font-size: 2rem;
+        color: #006994;
+        margin-bottom: 20px;
+    }
+
+    /* Form Container Styling */
+    .form-container {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-section {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 1em;
+    }
+
+    button {
+        background-color: #0288d1;
+        color: #fff;
+        font-size: 1.1em;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        width: 100%;
+    }
+
+    button:hover {
+        background-color: #ff6200;
+    }
+
+    button:focus {
+        outline: none;
+    }
+
+    /* Success and Error Message Styling */
+    .alert-danger, .alert-success {
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .alert-danger {
+        background-color: #ffcccb;
+        color: #d32f2f;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+</style>
+{% endblock %}

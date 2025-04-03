@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+  <h2>WAEC Result Checker</h2>
+
+  <form id="waec-result-form" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit">Check Result</button>
+  </form>
+
+  <!-- Response Message -->
+  <div id="response-message" style="display: none;"></div>
+
+  <!-- Error Summary -->
+  {% if form.errors %}
+    <div class="alert alert-danger">
+      <ul>
+        {% for field in form %}
+          {% for error in field.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const form = document.getElementById("waec-result-form");
+      form.addEventListener("submit", function(event) {
+        event.preventDefault();  // Prevent default form submission
+
+        const formData = new FormData(form);
+        fetch("{% url 'services:waec_result_checker' %}", {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-Requested-With": "XMLHttpRequest"  // Tells Django it's an AJAX request
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          const responseDiv = document.getElementById("response-message");
+          responseDiv.style.display = "block";
+
+          if (data.success) {
+            responseDiv.innerHTML = `<div class='alert alert-success'>WAEC PIN: <strong>${data.pin}</strong></div>`;
+          } else {
+            responseDiv.innerHTML = `<div class='alert alert-danger'>${data.error}</div>`;
+          }
+        })
+        .catch(error => {
+          console.error("Error:", error);
+        });
+      });
+    });
+  </script>
+{% endblock %}

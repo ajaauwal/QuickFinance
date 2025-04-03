@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error | Quickfinance</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        /* Modern Styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .error-container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+        }
+
+        .error-container h1 {
+            font-size: 2.5rem;
+            color: #d9534f;
+            margin-bottom: 15px;
+        }
+
+        .error-container p {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 25px;
+        }
+
+        .error-container .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #d9534f;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: 0.3s ease-in-out;
+        }
+
+        .error-container .button:hover {
+            background-color: #c9302c;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h1>Oops! Something went wrong.</h1>
+        <p>We couldn't process your request at the moment. Please try again later or contact support if the issue persists.</p>
+        <a href="{% url 'accounts:index' %}" class="button">Go Back to Home</a>
+    </div>
+</body>
+</html>

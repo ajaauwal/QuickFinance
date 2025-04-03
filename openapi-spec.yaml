@@ -1,0 +1,65 @@
+openapi: 3.0.0
+info:
+  title: My API
+  description: A description of the API that allows checking in by providing a PNR (Passenger Name Record).
+  version: 1.0.0
+servers:
+  - url: https://test.api.amadeus.com/v1
+    description: Amadeus Test API Base URL
+paths:
+  /checkin:
+    get:
+      summary: Get check-in links
+      description: Retrieve the check-in link for the provided PNR (Passenger Name Record). The Amadeus API provides the check-in URL for a given PNR that can be used by the passenger to complete the check-in process for their flight.
+      operationId: getCheckinLinks
+      parameters:
+        - name: pnr
+          in: query
+          required: true
+          description: The Passenger Name Record (PNR) identifier to get the check-in link. This identifier is typically provided by the airline after booking and is unique to the passenger's flight reservation.
+          schema:
+            type: string
+            example: "PNR987654321"
+      responses:
+        '200':
+          description: Successfully retrieved the check-in link. This indicates that the PNR is valid, and a check-in link has been generated for the passenger.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkinLink:
+                    type: string
+                    description: The URL to the check-in page for the provided PNR. This link allows the passenger to complete their check-in for the flight.
+                    example: "https://test.api.amadeus.com/v1/airlines/booking/checkin/PNR987654321"
+        '400':
+          description: Bad Request - Missing or invalid PNR parameter. This error is returned if the PNR parameter is not provided or if it is invalid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: A description of the error.
+                    example: "Invalid PNR provided"
+        '500':
+          description: Internal Server Error - Something went wrong on the server side. This error occurs if there is an unexpected issue while processing the request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: A description of the error.
+                    example: "Server encountered an unexpected error"
+components:
+  schemas:
+    CheckinResponse:
+      type: object
+      properties:
+        checkinLink:
+          type: string
+          description: The check-in URL generated based on the PNR. The link allows passengers to check-in for their flight online.
+          example: "https://test.api.amadeus.com/v1/airlines/booking/checkin/PNR987654321"

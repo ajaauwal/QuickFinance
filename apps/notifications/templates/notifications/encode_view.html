@@ -1,0 +1,13 @@
+
+
+{% block content %}
+<h2>Encode Data</h2>
+<form method="post" action="{% url 'accounts:encode_view' %}">
+    {% csrf_token %}
+    <label for="data">Enter Data to Encode:</label>
+    <input type="text" id="data" name="data" required>
+    <button type="submit">Encode</button>
+</form>
+{% if encoded_data %}
+    <p>Encoded Data: {{ encoded_data }}</p>
+{% endif %}

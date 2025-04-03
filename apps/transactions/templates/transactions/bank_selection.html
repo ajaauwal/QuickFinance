@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Selection</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>Select Your Bank</h1>
+        <form method="post" action="{% url 'submit_bank' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="bank-select">Choose a bank:</label>
+                <select name="bank" id="bank-select" required>
+                    <option value="">Select a bank</option>
+                    <option value="access">Access Bank</option>
+                    <option value="fcmb">FCMB</option>
+                    <option value="zenith">Zenith Bank</option>
+                    <option value="gtb">Guaranty Trust Bank (GTBank)</option>
+                    <option value="uba">United Bank for Africa (UBA)</option>
+                    <option value="firstbank">First Bank of Nigeria</option>
+                    <option value="stanbic">Stanbic IBTC Bank</option>
+                    <option value="ecobank">Ecobank</option>
+                    <option value="wema">Wema Bank</option>
+                    <option value="fidelity">Fidelity Bank</option>
+                    <option value="polaris">Polaris Bank</option>
+                    <option value="keystone">Keystone Bank</option>
+                    <option value="union">Union Bank of Nigeria</option>
+                    <option value="unity">Unity Bank</option>
+                    <option value="sterling">Sterling Bank</option>
+                    <option value="jaiz">Jaiz Bank</option>
+                    <option value="suntrust">SunTrust Bank</option>
+                    <option value="rubies">Rubies Microfinance Bank</option>
+                    <option value="kuda">Kuda Microfinance Bank</option>
+                    <option value="vfd">VFD Microfinance Bank</option>
+                    <option value="taj">TAJ Bank</option>
+                    <option value="globus">Globus Bank</option>
+                    <option value="providus">Providus Bank</option>
+                    <option value="randmerchant">Rand Merchant Bank</option>
+                    <option value="standardchartered">Standard Chartered Bank</option>
+                    <option value="lotus">Lotus Bank</option>
+                    <option value="parallex">Parallex Bank</option>
+                    <option value="opay">Opay</option>
+                    <option value="palmpay">PalmPay</option>
+                    <option value="carbon">Carbon Bank</option>
+                    <option value="paycom">Paycom (OPay)</option>
+                    <option value="mint">Mint Bank</option>
+                    <option value="eyowo">Eyowo</option>
+                    <option value="moniepoint">Moniepoint Microfinance Bank</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <button type="submit">Submit</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Optional JavaScript to handle client-side interactivity
+        document.getElementById('bank-select').addEventListener('change', function() {
+            const selectedBank = this.value;
+            if (selectedBank) {
+                alert('You selected ' + selectedBank);
+            }
+        });
+    </script>
+
+    <style>
+        /* Basic styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</body>
+</html>

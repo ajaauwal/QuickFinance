@@ -1,0 +1,187 @@
+{% load static %} 
+
+{% block content %}
+<!-- Video Background Section -->
+<div class="video-background">
+    <video autoplay muted loop id="bg-video">
+        <source src="{% static 'videos/background2.mp4' %}" type="video/mp4">
+        Your browser does not support HTML5 video.
+    </video>
+    <div class="overlay"></div>
+</div>
+
+<!-- Main Content Section -->
+<div class="content">
+    <button class="close-btn" onclick="closePage()"><i class="fas fa-times"></i></button>
+    <div class="about-container">
+        <h1 class="text-gradient">About Us</h1>
+        
+        <div class="about-content">
+            <h2>Who We Are</h2>
+            <p>Quickfinance is a leading digital financial platform that offers a variety of payment services, including airtime recharge, bill payments, and funds transfer.</p>
+            
+            <h2>Our Mission</h2>
+            <p>Our mission is to provide users with a seamless and secure way to manage their financial transactions online.</p>
+            
+            <h2>Our Vision</h2>
+            <p>We aim to be the preferred platform for financial services, making financial transactions easy, fast, and reliable for everyone.</p>
+            
+            <h2>Our Values</h2>
+            <p>We value security, transparency, and customer satisfaction above all else. We are committed to making every transaction safe and smooth.</p>
+            
+            <h2>Contact Us</h2>
+            <p>If you have any questions, please contact us at <a href="mailto:support@maaunquickfinance.com" class="contact-link">support@maaunquickfinance.com</a>.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modern Styling -->
+<style>
+/* General Styling */
+body {
+    font-family: "Poppins", sans-serif;
+    margin: 0;
+    padding: 0;
+    color: white;
+    overflow: hidden;
+}
+
+/* Fullscreen Video Background */
+#bg-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+}
+
+/* Dark Overlay */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: -1;
+}
+
+/* Main Content Styling */
+.content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* About Section Container */
+.about-container {
+    max-width: 800px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(255, 255, 255, 0.1);
+    animation: fadeIn 1s ease-in-out;
+}
+
+/* Heading Styling */
+.text-gradient {
+    font-size: 42px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #ff7eb3, #ff758c);
+    -webkit-background-clip: text;
+    background-clip: text; /* Standard property for compatibility */
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+}
+
+.about-content h2 {
+    font-size: 28px;
+    color: #ff758c;
+    font-weight: 600;
+    margin-top: 20px;
+}
+
+.about-content p {
+    font-size: 18px;
+    line-height: 1.6;
+    color: #f1f1f1;
+}
+
+/* Contact Link */
+.contact-link {
+    color: #ff758c;
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.contact-link:hover {
+    color: #ff3d68;
+}
+
+/* Close Button */
+.close-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    font-size: 26px;
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+}
+
+.close-btn:hover {
+    transform: rotate(90deg);
+}
+
+/* Fade-In Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .text-gradient {
+        font-size: 32px;
+    }
+
+    .about-content h2 {
+        font-size: 24px;
+    }
+
+    .about-content p {
+        font-size: 16px;
+    }
+}
+</style>
+
+<!-- JavaScript for Close Button -->
+<script>
+function closePage() {
+    document.querySelector('.video-background').style.display = 'none';
+    document.querySelector('.content').style.display = 'none';
+    window.location.href = '/';
+}
+</script>
+
+<!-- FontAwesome for Close Icon -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+{% endblock %}

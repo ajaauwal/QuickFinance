@@ -1,0 +1,387 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickFinance</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <!-- Start of Tawk.to Script -->
+    <script type="text/javascript">
+        var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+        (function() {
+            var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
+            s1.async = true;
+            s1.src = 'https://embed.tawk.to/677317cb49e2fd8dfe00af99/1igcp9tul';
+            s1.charset = 'UTF-8';
+            s1.setAttribute('crossorigin', '*');
+            s0.parentNode.insertBefore(s1, s0);
+        })();
+    </script>
+    <!-- End of Tawk.to Script -->
+
+    <div class="overlay"></div>
+    
+    <!-- Header Section -->
+    <header>
+        <div class="logo">
+            <img src="{% static 'images/quickfinance_logo.png' %}" alt="QuickFinance Logo">
+            <span>QuickFinance</span>
+        </div>
+        
+        <div class="search-bar">
+            <form action="{% url 'services:search' %}" method="get">
+                <input type="text" name="q" placeholder="Search..." class="search-input">
+                <button type="submit" class="search-button">Search</button>
+            </form>
+        </div>
+        
+        <nav>
+            <div class="dropdown">
+                <a href="#">Hi, {{ user.username }}</a>
+                <div class="dropdown-content">
+                    <a href="{% url 'transactions:profile' %}">Profile</a>
+                    <a href="{% url 'accounts:logout' %}">Logout</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <!-- Sidebar -->
+    <div class="left-panel">
+        {% if wallet %}
+        <div class="wallet-info-banner">
+            <div class="wallet-balance">
+                <h2>Available Balance</h2>
+                <p class="balance-amount">
+                    <strong>{{ wallet_currencies.0.balance|floatformat:2 }}</strong>
+                    <span class="currency-symbol">{{ wallet_currencies.0.currency }}</span>
+                </p>
+                <small>Last updated: {{ wallet.updated_at|date:"D, d M Y H:i" }}</small>
+            </div>
+        </div>
+        {% else %}
+        <div class="no-wallet">
+            <p class="alert-warning">No wallet found. Please create one to get started.</p>
+        </div>
+        {% endif %}
+
+        <!-- Sidebar Menu -->
+        <a href="{% url 'accounts:index' %}" class="menu-item">Home</a>
+        <a href="{% url 'transactions:manage_fund' %}" class="menu-item">Manage Fund</a>
+        <a href="{% url 'services:purchase_airtime' %}" class="menu-item">Airtime</a>
+        <a href="{% url 'services:data_topup' %}" class="menu-item">Data</a>
+        <a href="{% url 'services:utility_bills' %}" class="menu-item">Utility Bills</a>
+        <a href="{% url 'transactions:add_money' %}" class="menu-item">Add Money</a>
+        <a href="{% url 'services:pay_for_service' %}" class="menu-item">Payment</a>
+    </div>
+    
+    <!-- Main Content Section -->
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+    
+    <!-- Footer Section -->
+    <footer class="footer-container">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="/privacy-policy">Privacy Policy</a>
+                <a href="/terms-of-service">Terms of Service</a>
+                <a href="/terms_and_conditions">Terms and Conditions</a>
+                <a href="/contact">Contact</a>
+                <a href="/about">About</a>
+            </div>
+            <div class="footer-social">
+                <a href="https://www.facebook.com/yourprofile" target="_blank"><img src="{% static 'images/facebook.png' %}" alt="Facebook"></a>
+                <a href="https://twitter.com/yourprofile" target="_blank"><img src="{% static 'images/twitter.png' %}" alt="Twitter"></a>
+                <a href="https://www.instagram.com/yourprofile" target="_blank"><img src="{% static 'images/instagram.png' %}" alt="Instagram"></a>
+                <a href="https://www.linkedin.com/in/yourprofile" target="_blank"><img src="{% static 'images/linkedin.png' %}" alt="LinkedIn"></a>
+                <a href="https://www.youtube.com/in/yourprofile" target="_blank"><img src="{% static 'images/youtube.png' %}" alt="YouTube"></a>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 QuickFinance. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+
+<style>
+/* General Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: url("../images/hero-bg.jpg") no-repeat center/cover;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(1, 42, 108, 0.468);
+    padding: 15px 30px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+}
+
+.logo img {
+    width: 45px;
+    margin-right: 12px;
+}
+
+/* Search Bar */
+.search-bar input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    width: 250px;
+    transition: width 0.3s ease-in-out, border-color 0.3s;
+}
+
+.search-bar input:focus {
+    width: 300px;
+    border-color: #007bff;
+    outline: none;
+}
+
+.search-button {
+    padding: 10px 15px;
+    background: #007bff;
+    border: none;
+    color: rgb(6, 61, 139);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.search-button:hover {
+    background: #0056b3;
+}
+
+
+/* Navigation */
+nav .dropdown {
+    position: relative;
+}
+
+.dropdown a {
+    text-decoration: none;
+    color: #333;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.dropdown:hover a {
+    background: rgba(0, 123, 255, 0.1);
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    padding: 10px;
+    right: 0;
+    top: 40px;
+    min-width: 150px;
+    z-index: 1001;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.dropdown-content a {
+    display: block;
+    padding: 8px 12px;
+    color: #333;
+    text-decoration: none;
+    transition: background 0.3s;
+}
+
+.dropdown-content a:hover {
+    background: #007bff;
+    color: white;
+}
+
+/* Left Sidebar */
+.left-panel {
+    width: 250px;
+    background: rgba(255, 255, 255, 0.98);
+    padding: 20px;
+    box-shadow: 4px 0px 8px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    top: 0;
+    left: 0;
+    padding-top: 100px;
+}
+
+.main-content {
+    margin-left: 400px; /* Same width as sidebar */
+    flex-grow: 1;
+    padding: 20px;
+}
+
+.menu-item {
+    display: block;
+    padding: 12px 20px;
+    margin: 6px 0;
+    background: #f8f9fa;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    transition: all 0.3s ease-in-out;
+}
+
+.menu-item:hover {
+    background: #007bff;
+    color: white;
+    transform: translateX(5px);
+}
+
+.wallet-info-banner {
+    background: #007bff;
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.wallet-balance h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.balance-amount {
+    font-size: 22px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+/* Footer */
+.footer-container {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.98);
+    padding: 20px;
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    margin-top: auto;
+}
+
+.footer-links a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.footer-links a:hover {
+    color: #007bff;
+}
+
+.footer-social {
+    margin-top: 10px;
+}
+
+.footer-social img {
+    width: 30px;
+    margin: 0 8px;
+    transition: transform 0.3s;
+}
+
+.footer-social img:hover {
+    transform: scale(1.1);
+}
+
+.footer-bottom {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #777;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+    }
+
+    .search-bar input {
+        width: 200px;
+    }
+
+    .search-bar input:focus {
+        width: 250px;
+    }
+
+    .left-panel {
+        width: 220px;
+        padding: 15px;
+    }
+
+    .menu-item {
+        font-size: 14px;
+    }
+
+    .footer-links a {
+        display: block;
+        margin: 5px 0;
+    }
+
+    .footer-social img {
+        width: 25px;
+        margin: 5px;
+    }
+}
+</style>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = document.querySelector(".search-bar input");
+        const searchButton = document.querySelector(".search-button");
+    
+        searchButton.addEventListener("click", function () {
+            const query = searchInput.value.trim();
+            if (query !== "") {
+                // Replace with your actual search URL or functionality
+                alert("Searching for: " + query);
+                // window.location.href = `/search?q=${encodeURIComponent(query)}`;
+            } else {
+                alert("Please enter a search term.");
+            }
+        });
+    
+        searchInput.addEventListener("keypress", function (event) {
+            if (event.key === "Enter") {
+                searchButton.click();
+            }
+        });
+    });
+    </script>
+    

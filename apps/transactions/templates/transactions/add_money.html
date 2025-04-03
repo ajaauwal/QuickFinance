@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <!-- Main Content Section -->
+    <div class="main-container">
+        <div class="right-panel">
+            <h1>Add Money</h1>
+
+            <!-- Add Funds Form -->
+            <form method="POST" id="paystackForm" class="form-container">
+                {% csrf_token %}
+
+                <div class="form-section">
+                    <label for="amount">Amount</label>
+                    <input type="number" name="amount" id="amount" class="form-control" placeholder="Enter amount to add" required>
+                </div>
+
+                <div class="form-section">
+                    <label for="transaction_type">Transaction Type</label>
+                    <select name="transaction_type" id="transaction_type" class="form-control" required>
+                        <option value="">Select transaction type</option>
+                        <option value="deposit">Deposit</option>
+                        <option value="bonus">Bonus</option>
+                        <option value="referral">Referral</option>
+                    </select>
+                </div>
+
+                <div class="form-section">
+                    <label for="transaction_description">Transaction Description</label>
+                    <input type="text" name="transaction_description" id="transaction_description" class="form-control" placeholder="Enter transaction description" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="paystack-button">Add Fund</button>
+            </form>
+
+            <!-- Success and Error Messages -->
+            {% if error %}
+            <div class="alert alert-danger">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            {% if success %}
+            <div class="alert alert-success">
+                {{ success }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    
+{% endblock %}
+
+{% block extra_styles %}
+<!-- Paystack Script -->
+<script src="https://js.paystack.co/v1/inline.js"></script>
+
+<script>
+    document.getElementById("paystack-button").addEventListener("click", function(event) {
+        event.preventDefault();
+        const amount = document.getElementById("amount").value.trim();
+        const transactionType = document.getElementById("transaction_type").value.trim();
+        const transactionDescription = document.getElementById("transaction_description").value.trim();
+
+        if (!amount || !transactionType || !transactionDescription) {
+            alert("Please fill all fields before proceeding.");
+            return;
+        }
+
+        document.getElementById("loading-spinner")?.style.display = "block";
+
+        var paystackPublicKey = "{{ paystack_public_key }}"; 
+
+        var handler = PaystackPop.setup({
+            key: paystackPublicKey,
+            email: "{{ user.email }}",
+            amount: amount * 100, // Amount in Kobo
+            currency: "NGN",
+            ref: "ref-" + Math.floor(Math.random() * 1000000000),
+            callback: function(response) {
+                if (response.status === "success") {
+                    alert("Payment was successful! Your funds will be added shortly.");
+                    document.getElementById("paystackForm").submit();
+                } else {
+                    alert("Payment failed! Please try again.");
+                    document.getElementById("loading-spinner")?.style.display = "none";
+                }
+            },
+            onClose: function() {
+                alert("Payment process was cancelled.");
+                document.getElementById("loading-spinner")?.style.display = "none";
+            }
+        });
+
+        handler.openIframe();
+    });
+</script>
+
+<style>
+    /* General Reset */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+    }
+
+    /* Body Styling */
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background-color: #006994; /* Ocean Blue background */
+        overflow-x: hidden;
+        font-size: 16px;
+    }
+
+    /* Right Panel Styling */
+    .right-panel {
+        background-color: #fff;
+        color: #333;
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        margin-top: 50px;
+    }
+
+    .right-panel h1 {
+        text-align: center;
+        font-size: 2rem;
+        color: #006994;
+        margin-bottom: 20px;
+    }
+
+    /* Form Container Styling */
+    .form-container {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-section {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 1em;
+    }
+
+    button {
+        background-color: #0288d1;
+        color: #fff;
+        font-size: 1.1em;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        width: 100%;
+    }
+
+    button:hover {
+        background-color: #ff6200;
+    }
+
+    button:focus {
+        outline: none;
+    }
+
+    /* Success and Error Message Styling */
+    .alert-danger, .alert-success {
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .alert-danger {
+        background-color: #ffcccb;
+        color: #d32f2f;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    
+</style>
+{% endblock %}

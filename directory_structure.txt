@@ -1,0 +1,99 @@
+quickfinance/
+├── quickfinance/
+│   ├── __init__.py
+│   ├── asgi.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── wsgi.py
+│   └── .env
+├── apps/
+│   ├── accounts/
+│   │   ├── __init__.py
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── forms.py
+│   │   ├── models.py
+│   │   ├── templates/
+│   │   │   ├── base.html
+│   │   │   ├── index.html
+│   │   │   ├── dashboard.html
+│   │   │   ├── about.html
+│   │   │   ├── privacy.html
+│   │   │   └── terms.html
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── notifications/
+│   │   ├── __init__.py
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── integrations/
+│   │   │   └── twilio.py
+│   │   ├── models.py
+│   │   ├── templates/
+│   │   │   ├── base.html
+│   │   │   └── notifications.html
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── integrations/
+│   │   │   
+│   │   │   ├── paystack.py  # Integrated Paystack for Wallet and Fund Transfer
+│   │   │   ├── amadeus.py   # Integrated Paystack for Wallet and Fund Transfer
+│   │   │   └── budpay.py    # Added BudPay integration for Airtime, Data, and Utility Bills
+│   │   ├── models.py
+│   │   ├── templates/
+│   │   │   ├── base.html
+│   │   │   ├── services.html
+│   │   │   ├── airtime_recharge.html
+│   │   │   ├── utility_bills/
+│   │   │   │   ├── electricity_payment.html
+│   │   │   │   ├── cable_tv_payment.html
+│   │   │   │   ├── dstv_subscription.html
+│   │   │   │   ├── gotv_subscription.html
+│   │   │   │   └── startimes_subscription.html
+│   │   │   ├── online_flight_booking/
+│   │   │   │   ├── flights.html
+│   │   │   │   ├── destination_experiences.html
+│   │   │   │   ├── cars_transfers.html
+│   │   │   │   ├── market_insights.html
+│   │   │   │   ├── hotels.html
+│   │   │   │   └── itinerary_management.html
+│   │   │   ├── school_fees_payment.html
+│   │   │   └── data_services/
+│   │   │       ├── data_recharge.html
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   └── views/
+│   │       ├── __init__.py
+│   │       ├── airtime_recharge.py
+│   │       ├── utility_bills.py
+│   │       ├── manage_fund.py
+│   │       ├── online_flight_booking.py
+│   │       ├── school_fees_payment.py
+│   │       ├── data_services.py
+│   │       └── services.py
+│   ├── transactions/
+│   │   ├── __init__.py
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── models.py
+│   │   ├── templates/
+│   │   │   ├── base.html
+│   │   │   └── transactions.html
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   └── templates/
+│       ├── base.html
+│       ├── index.html
+│       ├── dashboard.html
+│       ├── about.html
+│       ├── privacy.html
+│       └── terms.html
+├── manage.py
+└── requirements.txt

@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment | QuickFinance</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        {% include 'sidebar.html' %}
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <h2>Make a Payment</h2>
+            
+            <div class="payment-tabs">
+                <button class="tab-button" onclick="openTab('debit-card')">💳 Debit Card</button>
+                <button class="tab-button" onclick="openTab('wallet')">👛 Wallet</button>
+            </div>
+            
+            <div id="debit-card" class="tab-content">
+                {% include 'debit_card_payment.html' %}
+            </div>
+            
+            <div id="wallet" class="tab-content" style="display:none;">
+                {% include 'process_wallet_payment.html' %}
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function openTab(tabName) {
+            document.getElementById('debit-card').style.display = 'none';
+            document.getElementById('wallet').style.display = 'none';
+            document.getElementById(tabName).style.display = 'block';
+        }
+    </script>
+</body>
+</html>

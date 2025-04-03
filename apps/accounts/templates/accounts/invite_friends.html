@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invite Friends</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #00bfff, #007acc);
+            color: #333;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+        }
+        header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+        }
+        header p {
+            font-size: 1.1rem;
+        }
+        
+        /* Invite Form */
+        .invite-form {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        .invite-form h2 {
+            color: #00bfff;
+            margin-bottom: 15px;
+        }
+        .invite-form label {
+            display: block;
+            font-weight: 600;
+            text-align: left;
+            margin-top: 10px;
+        }
+        .invite-form input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .invite-form button {
+            width: 100%;
+            padding: 12px;
+            background: #00bfff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 15px;
+        }
+        .invite-form button:hover {
+            background: #008bb9;
+        }
+        
+        /* Social Media Section */
+        .social-media {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .social-media h2 {
+            color: white;
+            margin-bottom: 15px;
+        }
+        .social-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .social-buttons a {
+            background: white;
+            color: #007acc;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        .social-buttons a:hover {
+            background: #007acc;
+            color: white;
+        }
+        
+        /* Footer */
+        footer {
+            margin-top: 40px;
+            font-size: 0.9rem;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Invite Your Friends</h1>
+        <p>Share the app with your friends and earn rewards!</p>
+    </header>
+    
+    <section class="invite-form">
+        <h2>Invite via Email or Phone</h2>
+        <form action="send_invite.php" method="POST">
+            <label for="friend-name">Friend's Name:</label>
+            <input type="text" id="friend-name" name="friend_name" required placeholder="Enter friend's name">
+            
+            <label for="friend-email">Friend's Email:</label>
+            <input type="email" id="friend-email" name="friend_email" required placeholder="Enter friend's email">
+            
+            <label for="friend-phone">Friend's Phone (optional):</label>
+            <input type="tel" id="friend-phone" name="friend_phone" placeholder="Enter friend's phone number">
+            
+            <button type="submit">Send Invite</button>
+        </form>
+    </section>
+
+    <section class="social-media">
+        <h2>Invite via Social Media</h2>
+        <div class="social-buttons">
+            <a href="#">Facebook</a>
+            <a href="#">Twitter</a>
+            <a href="#">WhatsApp</a>
+            <a href="#">Instagram</a>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 YourApp Name. All Rights Reserved.</p>
+    </footer>
+</body>
+</html>

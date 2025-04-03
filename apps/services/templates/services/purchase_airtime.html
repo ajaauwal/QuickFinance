@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load static %}
+<title>Purchase Airtime</title>
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<style>
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .category-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: box-shadow 0.3s ease, transform 0.3s ease;
+    }
+    .category-card:hover {
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        transform: translateY(-5px);
+    }
+    .category-card.selected {
+        border-color: #007bff;
+        background-color: #f0f8ff;
+    }
+    .amount-field-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .amount-field-container input {
+        width: 100%;
+        padding: 10px;
+        margin-right: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+    .amount-field-container button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    .amount-field-container button:hover {
+        background-color: #0056b3;
+    }
+    .network-logo img {
+        display: block;
+        margin: 10px auto;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+    }
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+</style>
+
+<script>
+    // Handle category card selection and redirect to VTPass endpoint
+    function selectCategory(amount, provider) {
+        // Update the amount field
+        const amountField = document.getElementById("amount");
+        if (amountField) {
+            amountField.value = amount;
+        }
+
+        // Update the selected card's appearance
+        const cards = document.querySelectorAll(".category-card");
+        cards.forEach(card => card.classList.remove("selected"));
+
+        const selectedCard = document.getElementById("category-" + amount);
+        if (selectedCard) {
+            selectedCard.classList.add("selected");
+        } else {
+            console.error("Card with ID 'category-" + amount + "' not found.");
+        }
+
+        // Redirect to the VTPass API endpoint with the selected amount and provider
+        window.location.href = `/vtpass/airtime/purchase/?provider=${provider}&amount=${amount}`;
+    }
+</script>
+
+{% endblock %}
+
+{% block extra_styles %}
+</head>
+<body>
+    <div class="container">
+        <h1>Purchase Airtime</h1>
+
+        <!-- Airtime Purchase Form -->
+        <form method="post" action="">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="network_provider">Select Network Provider:</label>
+                <select id="network_provider" name="network_provider" onchange="this.form.submit()">
+                    {% for provider in network_providers %}
+                    <option value="{{ provider.value }}" {% if provider.value == network_provider %}selected{% endif %}>
+                        {{ provider.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Network Provider Logo -->
+            <div class="network-logo">
+                {% for provider in network_providers %}
+                {% if provider.value == network_provider %}
+                <img src="{% static provider.logo %}" alt="{{ provider.name }} Logo" width="150">
+                {% endif %}
+                {% endfor %}
+            </div>
+            
+            <!-- Categories Grid -->
+            <div class="categories-grid">
+                {% for category in categories %}
+                <div 
+                    id="category-{{ category.amount }}" 
+                    class="category-card" 
+                    onclick="selectCategory('{{ category.amount }}', '{{ network_provider }}')">
+                    <h4>{{ category.category }}</h4>
+                    <p>₦{{ category.amount }}</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Amount Field with Pay Button -->
+            <div class="amount-field-container">
+                <input 
+                    type="number" 
+                    id="amount" 
+                    name="amount" 
+                    value="{{ categories.0.amount }}" 
+                    placeholder="Enter amount" 
+                    min="1" 
+                    required>
+                <button type="submit">Pay</button>
+            </div>
+
+            <div class="form-group">
+                <label for="phone_number">Enter Phone Number:</label>
+                <input type="text" id="phone_number" name="phone_number" required>
+            </div>
+
+            <div class="form-group">
+                <label for="payment_method">Select Payment Method:</label>
+                <select id="payment_method" name="payment_method">
+                    <option value="wallet">Wallet</option>
+                    <option value="debit_card">Debit Card</option>
+                </select>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
+{% endblock %}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    let providerSelect = document.getElementById("network_provider");
+    let amountInput = document.getElementById("amount");
+
+    providerSelect.addEventListener("change", function () {
+        let selectedProvider = this.value;
+        let amount = amountInput.value;
+
+        // Only proceed if the amount is not empty
+        if (amount) {
+            // Redirect to the vtpass airtime purchase page with provider and amount as query parameters
+            window.location.href = `/vtpass/airtime/purchase/?provider=${selectedProvider}&amount=${amount}`;
+        } else {
+            // Optionally, display a message or highlight the amount field
+            alert("Please enter an amount before selecting a provider.");
+        }
+    });
+
+    // Optional: Add event listener for amount input field to trigger provider change
+    amountInput.addEventListener("input", function () {
+        let selectedProvider = providerSelect.value;
+        let amount = this.value;
+
+        // Only proceed if the amount is not empty and a provider is selected
+        if (selectedProvider && amount) {
+            window.location.href = `/vtpass/airtime/purchase/?provider=${selectedProvider}&amount=${amount}`;
+        }
+    });
+});
+
+</script>

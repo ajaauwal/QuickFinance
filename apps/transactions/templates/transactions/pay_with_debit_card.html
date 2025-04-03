@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debit Card Payment</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(to bottom right, #0d47a1, #1976d2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .payment-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        label {
+            display: block;
+            color: #fff;
+            font-weight: bold;
+            margin: 10px 0 5px;
+            text-align: left;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+        }
+
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background-color: #110272;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        button:hover {
+            background-color: #021964;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="payment-container">
+        <h1>Debit Card Payment</h1>
+        <form method="post">
+            {% csrf_token %}
+            <label for="card_number">Card Number:</label>
+            <input type="text" name="card_number" id="card_number" required placeholder="1234 5678 9012 3456">
+            
+            <label for="expiry_date">Expiry Date:</label>
+            <input type="text" name="expiry_date" id="expiry_date" required placeholder="MM/YY">
+            
+            <label for="cvv">CVV:</label>
+            <input type="text" name="cvv" id="cvv" required placeholder="123">
+            
+            <label for="amount">Amount:</label>
+            <input type="text" name="amount" id="amount" required placeholder="$0.00">
+            
+            <button type="submit">Submit Payment</button>
+        </form>
+    </div>
+
+</body>
+</html>

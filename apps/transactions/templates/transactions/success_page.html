@@ -1,0 +1,16 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Transaction Successful</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}"> <!-- Optional stylesheet -->
+</head>
+<body>
+    <div class="container">
+        <h1>Transaction Successful!</h1>
+        <p>Your funds have been successfully added to your wallet.</p>
+        <a href="{% url 'accounts:index' %}">Go to Dashboard</a> <!-- Replace with your desired link -->
+    </div>
+</body>
+</html>

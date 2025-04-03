@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hero Bar with Service Provider Logos</title>
+    <style>
+        /* Hero Bar Style */
+        .hero-bar {
+            background-color: #f0f0f0;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Content inside the hero bar */
+        .hero-bar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Arrow container to show the down arrow */
+        .arrow-container {
+            cursor: pointer;
+        }
+
+        #dropdown-arrow {
+            font-size: 24px;
+            transition: transform 0.3s ease;
+        }
+
+        /* Phone number container on the right */
+        .phone-number-container {
+            display: flex;
+            justify-content: flex-end;
+            flex: 1;
+        }
+
+        #phone-number {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        /* Provider logos dropdown container */
+        .provider-logos {
+            display: none; /* Initially hidden */
+            padding-top: 20px;
+            text-align: center;
+        }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .logo-container img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+
+        .logo-container img:hover {
+            transform: scale(1.1);
+        }
+
+        /* Body container for network provider categories */
+        .body-container {
+            padding: 40px 20px;
+            background-color: #f9f9f9;
+        }
+
+        .network-provider-section {
+            display: none;
+        }
+
+        .category-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .category-item {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .category-item:hover {
+            background-color: #0056b3;
+        }
+
+        /* Selected network provider name */
+        #selected-network {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Select Network Style */
+        #select-network-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        #select-network-container select {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+    </style>
+</head>
+<body>
+
+    
+<div class="hero-bar">
+    <div class="hero-bar-content">
+        <div class="arrow-container">
+            <i class="fas fa-chevron-down" id="dropdown-arrow"></i>
+        </div>
+        <div id="select-network-container">
+            <select id="network-select">
+                <option value="" disabled selected>Select Your Network</option>
+                <option value="mtn">MTN</option>
+                <option value="glo">Glo</option>
+                <option value="airtel">Airtel</option>
+                <option value="9mobile">9Mobile</option>
+            </select>
+        </div>
+        <div class="phone-number-container">
+            <input type="text" id="phone-number" placeholder="Enter Phone Number" maxlength="11" disabled />
+        </div>
+    </div>
+
+    <div class="provider-logos" id="provider-logos">
+        <div class="logo-container">
+            <img src="{% static 'images/mtn.png' %}" alt="MTN" id="mtn-logo">
+            <img src="{% static 'images/glo.png' %}" alt="Glo" id="glo-logo">
+            <img src="{% static 'images/airtel.png' %}" alt="Airtel" id="airtel-logo">
+            <img src="{% static 'images/9mobile.png' %}" alt="9Mobile" id="nine-mobile-logo">
+        </div>
+    </div>
+</div>
+
+<div class="body-container">
+    <div id="selected-network"></div>
+
+    <div class="network-provider-section" id="airtel-section">
+        <div class="category-list">
+            <div class="category-item">Hot</div>
+            <div class="category-item">Daily</div>
+            <div class="category-item">Weekly</div>
+            <div class="category-item">Monthly</div>
+            <div class="category-item">3 Months+</div>
+            <div class="category-item">Social</div>
+            <div class="category-item">ROUTER</div>
+            <div class="category-item">MiFi</div>
+            <div class="category-item">Other</div>
+        </div>
+    </div>
+
+    <div class="network-provider-section" id="mtn-section">
+        <div class="category-list">
+            <div class="category-item">Hot</div>
+            <div class="category-item">Daily</div>
+            <div class="category-item">Weekly</div>
+            <div class="category-item">Monthly</div>
+            <div class="category-item">XtraValue</div>
+        </div>
+    </div>
+
+    <div class="network-provider-section" id="glo-section">
+        <div class="category-list">
+            <div class="category-item">Hot</div>
+            <div class="category-item">Daily</div>
+            <div class="category-item">Weekend</div>
+            <div class="category-item">Weekly</div>
+            <div class="category-item">Monthly</div>
+            <div class="category-item">Mega</div>
+            <div class="category-item">Social</div>
+            <div class="category-item">TV</div>
+            <div class="category-item">Campus</div>
+            <div class="category-item">Hourly</div>
+            <div class="category-item">Special</div>
+        </div>
+    </div>
+
+    <div class="network-provider-section" id="nine-mobile-section">
+        <div class="category-list">
+            <div class="category-item">Hot</div>
+            <div class="category-item">Daily</div>
+            <div class="category-item">Weekly</div>
+            <div class="category-item">Monthly</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('dropdown-arrow').addEventListener('click', function () {
+        const providerLogos = document.getElementById('provider-logos');
+        this.style.transform = providerLogos.style.display === 'block' ? 'rotate(0deg)' : 'rotate(180deg)';
+        providerLogos.style.display = providerLogos.style.display === 'block' ? 'none' : 'block';
+    });
+
+    document.getElementById('network-select').addEventListener('change', function () {
+        const selectedValue = this.value;
+        document.getElementById('phone-number').disabled = false;
+        document.getElementById('selected-network').innerText = `You selected ${selectedValue.charAt(0).toUpperCase() + selectedValue.slice(1)}`;
+
+        document.querySelectorAll('.network-provider-section').forEach(section => section.style.display = 'none');
+
+        if (selectedValue === 'mtn') {
+            document.getElementById('mtn-section').style.display = 'block';
+        } else if (selectedValue === 'glo') {
+            document.getElementById('glo-section').style.display = 'block';
+        } else if (selectedValue === 'airtel') {
+            document.getElementById('airtel-section').style.display = 'block';
+        } else if (selectedValue === '9mobile') {
+            document.getElementById('nine-mobile-section').style.display = 'block';
+        }
+    });
+</script>
+
+{% endblock %}

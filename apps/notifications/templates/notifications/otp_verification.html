@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevents scrolling */
+            position: relative;
+            color: #fff;
+        }
+        
+        /* Fullscreen video background */
+        #background-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+        }
+
+        /* Black transparent overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+        }
+
+        /* OTP Verification Container */
+        .otp-verification-container {
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent */
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+        .otp-verification-container h2 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        .otp-verification-container p {
+            margin-bottom: 1.5rem;
+            color: #666;
+        }
+        .otp-input-group {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .otp-input-group input {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 1.2rem;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .otp-input-group input:focus {
+            border-color: #007bff;
+        }
+        .verify-button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .verify-button:hover {
+            background-color: #0056b3;
+        }
+        .resend-otp {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        .resend-otp a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .resend-otp a:hover {
+            text-decoration: underline;
+        }
+        .error-message {
+            color: #d9534f;
+            margin-bottom: 1rem;
+        }
+
+        /* Close button styling */
+        .close-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 30px;
+            color: #fff;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 3;
+        }
+        .close-btn:hover {
+            color: #ff0000; /* Red color on hover */
+        }
+    </style>
+</head>
+<body>
+    <!-- Full-screen video background -->
+    <video autoplay muted loop id="background-video">
+        <source src="{% static 'videos/background2.mp4' %}" type="video/mp4">
+        Your browser does not support HTML5 video.
+    </video>
+    <div class="overlay"></div>
+
+    <!-- OTP Verification Modal -->
+    <div class="otp-verification-container">
+        <button class="close-btn" onclick="closePage()">X</button>
+        <h2>OTP Verification</h2>
+        <p>Enter the OTP sent to your email or phone number.</p>
+        
+        {% if error_message %}
+            <p class="error-message">{{ error_message }}</p>
+        {% endif %}
+
+        <form method="POST" action="{% url 'verify_otp' %}">
+            {% csrf_token %}
+            <div class="otp-input-group">
+                <input type="text" name="otp" maxlength="6" placeholder="Enter OTP" required>
+            </div>
+            
+            <button type="submit" class="verify-button">Verify</button>
+        </form>
+
+        <div class="resend-otp">
+            <p>If you didn't receive the OTP, <a href="{% url 'resend_otp' %}">resend it</a>.</p>
+        </div>
+    </div>
+
+    <!-- Optional: Include JavaScript for interactive features -->
+    <script>
+        // Close button functionality
+        function closePage() {
+            // Close the OTP modal by hiding it
+            document.querySelector('.otp-verification-container').style.display = 'none';
+            // Optionally redirect to another page
+            window.location.href = '/'; // Redirects to homepage or another URL as needed
+        }
+    </script>
+</body>
+</html>

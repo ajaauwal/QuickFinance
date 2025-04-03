@@ -1,0 +1,19 @@
+{% load static %}
+  <h1>Update Transaction Status</h1>
+
+  <p><strong>Transaction ID:</strong> {{ transaction.transaction_id }}</p>
+  
+  <form method="POST">
+    {% csrf_token %}
+    <label for="status">Select Status</label>
+    <select name="status" id="status">
+      <option value="Pending" {% if transaction.status == 'Pending' %}selected{% endif %}>Pending</option>
+      <option value="Completed" {% if transaction.status == 'Completed' %}selected{% endif %}>Completed</option>
+      <option value="Failed" {% if transaction.status == 'Failed' %}selected{% endif %}>Failed</option>
+      <option value="Cancelled" {% if transaction.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+    </select>
+    <button type="submit">Update Status</button>
+  </form>
+
+  <a href="{% url 'transaction_history' %}">Back to Transaction History</a>
+
