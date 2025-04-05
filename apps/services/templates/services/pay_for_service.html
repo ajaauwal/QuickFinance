@@ -2,184 +2,189 @@
 
 {% block content %}
 {% load static %}
-<div class="main-container">
-    <div class="right-panel">
-        <h1>Pay for Service</h1>
-        <form method="post" class="form-container">
-            {% csrf_token %}
-            
-            <!-- Service Selection Dropdown -->
-            <div class="form-section">
-                <label for="service">Choose a Service</label>
-                <select id="service" name="service" required>
-                    <option value="airtime">Airtime</option>
-                    <option value="data">Data</option>
-                    <option value="electricity">Electricity</option>
-                    <option value="dstv">DSTV</option>
-                    <option value="gotv">GOTV</option>
-                    <option value="startimes">Startimes</option>
-                    <option value="school_fees">School Fees</option>
-                    <option value="credit_loan">Credit & Loan</option>
-                    <option value="flight_booking">Book Flight</option>
-                </select>
-            </div>
-            
-            <!-- Payment Amount -->
-            <div class="form-section">
-                <label for="amount">Enter Amount</label>
-                <input type="number" id="amount" name="amount" required>
-            </div>
+<div class="page-wrapper">
+    <div class="main-container">
+        <div class="right-panel">
+            <h1>Pay for Service</h1>
+            <form method="post" class="form-container">
+                {% csrf_token %}
+                
+                <!-- Service Selection Dropdown -->
+                <div class="form-section">
+                    <label for="service">Choose a Service</label>
+                    <select id="service" name="service" required class="form-control">
+                        <option value="airtime">Airtime</option>
+                        <option value="data">Data</option>
+                        <option value="electricity">Electricity</option>
+                        <option value="dstv">DSTV</option>
+                        <option value="gotv">GOTV</option>
+                        <option value="startimes">Startimes</option>
+                        <option value="school_fees">School Fees</option>
+                        <option value="flight_booking">Book Flight</option>
+                    </select>
+                </div>
+                
+                <!-- Payment Amount -->
+                <div class="form-section">
+                    <label for="amount">Enter Amount</label>
+                    <input type="number" id="amount" name="amount" required class="form-control">
+                </div>
 
-            <!-- Payment Method Selection -->
-            <div class="form-section">
-                <label for="payment_method">Choose Payment Method</label>
-                <select id="payment_method" name="payment_method" required>
-                    <option value="wallet_balance">Wallet Balance</option>
-                    <option value="paystack">Paystack (Debit Card)</option>
-                </select>
-            </div>
+                <!-- Payment Method Selection -->
+                <div class="form-section">
+                    <label for="payment_method">Choose Payment Method</label>
+                    <select id="payment_method" name="payment_method" required class="form-control">
+                        <option value="wallet_balance">Wallet Balance</option>
+                        <option value="paystack">Paystack (Debit Card)</option>
+                    </select>
+                </div>
 
-            <!-- Submit Button -->
-            <button type="submit" class="btn btn-primary">Pay Now</button>
-        </form>
+                <!-- Submit Button -->
+                <div class="button-container">
+                    <button type="submit" class="btn btn-primary">Pay Now</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
-
-{% endblock %}
-
-{% block extra_styles %}
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: linear-gradient(to bottom right, #0d47a1, #1976d2);
-        margin: 0;
+    @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.98); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .page-wrapper {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 1s ease-in-out;
         padding: 20px;
-        color: white;
+        background: linear-gradient(to top, #2c3e50, #4ca1af);
     }
 
     .main-container {
-        margin: 20px auto;
-        padding: 20px;
-        max-width: 600px;
-        background: #fff;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
+        width: 90%;
+        max-width: 480px;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(15px);
+        padding: 35px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
     }
 
-    .right-panel {
-        flex: 1;
-        background: rgba(255, 255, 255, 0);
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 30px rgba(255, 255, 255, 0.3);
-        margin-left: 20px;
-    }
-
-    .form-container {
-        max-width: 400px;
-        margin: auto;
+    .main-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
     }
 
     h1 {
-        text-align: center;
-        color: #041a7c;
-        margin-bottom: 20px;
-        text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 4px 6px rgba(0, 0, 0, 0.4);
+        font-size: 30px;
+        color: #ffffff;
+        margin-bottom: 30px;
+        font-weight: 700;
+        text-transform: uppercase;
+        text-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 i {
+        margin-right: 10px;
+        color: #60a5fa;
     }
 
     .form-section {
-        margin-bottom: 30px;
-        padding: 20px;
-        border: 1px solid rgba(255, 255, 255, 0);
+        margin-bottom: 20px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
         border-radius: 8px;
-        background: rgba(2, 20, 122, 0.95);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        font-size: 16px;
+        color: #333;
+        transition: border-color 0.3s ease;
     }
 
-    label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-        color: #fff;
+    .form-control:focus {
+        border-color: #3B82F6;
+        outline: none;
     }
 
-    input, select {
-        width: calc(100% - 20px);
-        padding: 10px;
-        margin-bottom: 15px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        transition: border-color 0.3s, box-shadow 0.3s;
-    }
-
-    input:focus, select:focus {
-        border-color: #1976d2;
-        box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
-    }
-
-    button {
-        background-color: #110272;
-        color: white;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: bold;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    button:hover {
-        background-color: #021964;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
-    }
-
-    .footer-container {
-        background-color: hsl(20, 65%, 86%);
-        color: #ffffff;
-        text-align: center;
-        padding: 20px;
-        border-top: 4px solid #ffffff;
-        height: 100px;
-    }
-
-    .footer-links {
+    .button-container {
         display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .btn {
+        display: flex;
+        align-items: center;
         justify-content: center;
-        gap: 15px;
-        margin-bottom: 15px;
-    }
-
-    .footer-links a {
-        color: #00aaff;
+        gap: 10px;
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #6366f1, #4338ca);
+        color: white;
+        font-size: 17px;
+        font-weight: 600;
         text-decoration: none;
-        font-weight: bold;
-        transition: color 0.3s ease;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        position: relative;
+        overflow: hidden;
     }
 
-    .footer-links a:hover {
-        color: #ffffff;
+    .btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2);
+        transition: left 0.4s ease;
     }
 
-    .footer-social {
-        margin-bottom: 15px;
+    .btn:hover::before {
+        left: 100%;
     }
 
-    .footer-social a img {
-        width: 30px;
-        height: 30px;
-        margin: 0 10px;
-        transition: transform 0.3s ease;
+    .btn:hover {
+        background: linear-gradient(135deg, #4f46e5, #312e81);
+        transform: scale(1.07);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
     }
 
-    .footer-social a img:hover {
-        transform: scale(1.2);
+    .btn i {
+        font-size: 18px;
     }
 
-    .footer-bottom {
-        font-size: 14px;
+    .spinner {
+        text-align: center;
+        margin-top: 15px;
+        font-size: 18px;
+        color: #3B82F6;
+    }
+
+    @media (max-width: 600px) {
+        .main-container {
+            width: 100%;
+            padding: 25px;
+        }
+
+        .btn {
+            padding: 14px;
+            font-size: 16px;
+        }
     }
 </style>
+
 {% endblock %}

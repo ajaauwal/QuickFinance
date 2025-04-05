@@ -79,34 +79,8 @@
     }
 </style>
 
-<script>
-    // Handle category card selection and redirect to VTPass endpoint
-    function selectCategory(amount, provider) {
-        // Update the amount field
-        const amountField = document.getElementById("amount");
-        if (amountField) {
-            amountField.value = amount;
-        }
 
-        // Update the selected card's appearance
-        const cards = document.querySelectorAll(".category-card");
-        cards.forEach(card => card.classList.remove("selected"));
 
-        const selectedCard = document.getElementById("category-" + amount);
-        if (selectedCard) {
-            selectedCard.classList.add("selected");
-        } else {
-            console.error("Card with ID 'category-" + amount + "' not found.");
-        }
-
-        // Redirect to the VTPass API endpoint with the selected amount and provider
-        window.location.href = `/vtpass/airtime/purchase/?provider=${provider}&amount=${amount}`;
-    }
-</script>
-
-{% endblock %}
-
-{% block extra_styles %}
 </head>
 <body>
     <div class="container">
@@ -178,7 +152,7 @@
     </div>
 </body>
 </html>
-{% endblock %}
+
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -211,4 +185,28 @@
     });
 });
 
+
+    // Handle category card selection and redirect to VTPass endpoint
+    function selectCategory(amount, provider) {
+        // Update the amount field
+        const amountField = document.getElementById("amount");
+        if (amountField) {
+            amountField.value = amount;
+        }
+
+        // Update the selected card's appearance
+        const cards = document.querySelectorAll(".category-card");
+        cards.forEach(card => card.classList.remove("selected"));
+
+        const selectedCard = document.getElementById("category-" + amount);
+        if (selectedCard) {
+            selectedCard.classList.add("selected");
+        } else {
+            console.error("Card with ID 'category-" + amount + "' not found.");
+        }
+
+        // Redirect to the VTPass API endpoint with the selected amount and provider
+        window.location.href = `/vtpass/airtime/purchase/?provider=${provider}&amount=${amount}`;
+    }
 </script>
+{% endblock %}

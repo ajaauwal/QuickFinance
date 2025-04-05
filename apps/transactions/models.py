@@ -103,7 +103,7 @@ class Transaction(models.Model):
     service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='transactions')
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     payment_method = models.CharField(max_length=20, choices=[('wallet', 'Wallet'), ('debit_card', 'Debit Card')])
-    date_created = models.DateTimeField(auto_now_add=True)
+    date_created = models.DateTimeField(auto_now_add=True)  # Keep this for the timestamp
     wallet = models.ForeignKey(Wallet, null=True, blank=True, on_delete=models.SET_NULL, related_name='transactions')
     paystack_transaction = models.ForeignKey(PaystackTransaction, null=True, blank=True, on_delete=models.SET_NULL)
     

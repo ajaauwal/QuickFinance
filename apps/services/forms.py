@@ -1,6 +1,6 @@
 from django import forms
 from django.core.validators import RegexValidator
-from .models import AirtimeRecharge, DataPurchase, LoanApplication, SchoolFeesPayment, FlightBooking, ElectricityPayment, DstvSubscription, GoTVSubscription, StarTimesSubscription
+from .models import AirtimeRecharge, DataTopUp, LoanApplication, SchoolFeesPayment, FlightBooking, ElectricityPayment, DstvSubscription, GoTVSubscription, StarTimesSubscription
 from django import forms
 from .models import ServicePayment
 
@@ -107,7 +107,7 @@ class DataTopUpForm(forms.ModelForm):
     amount = forms.DecimalField(max_digits=10, decimal_places=2, label="Amount")
 
     class Meta:
-        model = DataPurchase
+        model = DataTopUp
         fields = ['provider', 'data_plan', 'phone_number', 'amount']
 
 

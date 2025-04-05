@@ -3,6 +3,7 @@ import random
 import string
 import requests
 import json
+import uuid
 from dotenv import load_dotenv
 from django.conf import settings
 from django.views import View
@@ -197,7 +198,7 @@ class DataTopUpView(View):
         form = DataTopUpForm()
 
         wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None
-        transactions = Transaction.objects.filter(user=request.user) if request.user.is_authenticated else []
+        transactions = Transaction.objects.filter(date_created__gte='2025-01-01')
 
         context = {
             'form': form,
@@ -214,6 +215,9 @@ class DataTopUpView(View):
     def post(self, request):
         """ Handles the POST request for data top-up """
         form = DataTopUpForm(request.POST)
+        wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None
+        transactions = Transaction.objects.filter(user=request.user) if request.user.is_authenticated else []
+
         if form.is_valid():
             data = form.cleaned_data
             amount = data['amount']
@@ -225,33 +229,46 @@ class DataTopUpView(View):
             elif payment_method == 'debit_card':
                 return self._process_debit_card_payment(request, data)
 
-        # If form is invalid, re-render the form with errors
+        # If form is invalid, re-render the form with full context
         messages.error(request, "Please correct the errors below.")
-        return render(request, 'services/data_topup.html', {'form': form})
+        context = {
+            'form': form,
+            'wallet': wallet,
+            'wallet_currencies': [{"currency": "NGN", "symbol": "₦", "balance": wallet.balance if wallet else 0}] if wallet else [],
+            'transactions': transactions,
+            'network_providers': NETWORK_PROVIDERS,
+        }
+        return render(request, 'services/data_topup.html', context)
+
+    def _generate_reference(self):
+        """ Generates a unique transaction reference """
+        return str(uuid.uuid4()).replace('-', '')[:12]
 
     def _process_wallet_payment(self, request, amount, form):
         """ Processes data top-up using wallet payment """
         wallet = get_object_or_404(Wallet, user=request.user)
-        
+
         if wallet.balance < amount:
             messages.error(request, "Insufficient wallet balance.")
             return redirect('services:data_topup')
 
-        # Deduct from wallet balance
+        # Deduct from wallet
         wallet.balance -= amount
         wallet.save()
 
-        # Save the form with user assignment
+        # Save top-up
         topup = form.save(commit=False)
         topup.user = request.user
         topup.save()
 
-        # Create a transaction record
+        # Log transaction
         Transaction.objects.create(
             user=request.user,
             service=topup.service,
             amount=amount,
-            payment_method='wallet'
+            payment_method='wallet',
+            status='successful',
+            reference=self._generate_reference()
         )
 
         messages.success(request, "Data top-up successful via wallet.")
@@ -260,17 +277,49 @@ class DataTopUpView(View):
     def _process_debit_card_payment(self, request, data):
         """ Processes data top-up using debit card (VTPass API) """
         vtpass = VTPassAPI()
-        response = vtpass.purchase_data_plan(
-            provider=data['provider'],
-            number=data['phone_number'],
-            plan=data['data_plan'],
-            reference="unique_transaction_reference"
-        )
+        reference = self._generate_reference()
 
-        if response.get('status') == 'success':
-            messages.success(request, "Data top-up successful via debit card.")
-        else:
-            messages.error(request, response.get('message', 'Error processing payment'))
+        try:
+            response = vtpass.purchase_data_plan(
+                provider=data['provider'],
+                number=data['phone_number'],
+                plan=data['data_plan'],
+                reference=reference
+            )
+
+            if response.get('status') == 'success':
+                # Log transaction
+                Transaction.objects.create(
+                    user=request.user,
+                    service='data_topup',
+                    amount=data['amount'],
+                    payment_method='debit_card',
+                    status='successful',
+                    reference=reference
+                )
+                messages.success(request, "Data top-up successful via debit card.")
+            else:
+                Transaction.objects.create(
+                    user=request.user,
+                    service='data_topup',
+                    amount=data['amount'],
+                    payment_method='debit_card',
+                    status='failed',
+                    reference=reference
+                )
+                messages.error(request, response.get('message', 'Error processing payment'))
+
+        except Exception as e:
+            # Log and handle any exceptions that occur during the payment process
+            Transaction.objects.create(
+                user=request.user,
+                service='data_topup',
+                amount=data['amount'],
+                payment_method='debit_card',
+                status='failed',
+                reference=reference
+            )
+            messages.error(request, f"An error occurred: {str(e)}")
 
         return redirect('services:data_topup')
 

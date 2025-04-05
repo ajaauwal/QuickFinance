@@ -108,17 +108,39 @@ class LoanApplication(models.Model):
     def __str__(self):
         return f"Loan Application {self.id} by {self.user.username}"
 
-# Data Purchase Model
-class DataPurchase(models.Model):
+from django.db import models
+from django.contrib.auth.models import User
+
+class DataTopUp(models.Model):
+    NETWORK_CHOICES = [
+        ('mtn', 'MTN'),
+        ('airtel', 'Airtel'),
+        ('glo', 'Glo'),
+        ('nine-mobile', '9Mobile'),
+    ]
+
+    CATEGORY_CHOICES = [
+        ('hot', 'Hot'),
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+        ('3 months+', '3 Months+'),
+        ('social', 'Social'),
+        ('router', 'Router'),
+        ('mifi', 'MiFi'),
+        ('others', 'Others'),
+    ]
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    provider = models.CharField(max_length=20)
-    data_plan = models.CharField(max_length=50)
     phone_number = models.CharField(max_length=11)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    network = models.CharField(choices=NETWORK_CHOICES, max_length=20)
+    category = models.CharField(choices=CATEGORY_CHOICES, max_length=20)
+    bundle = models.CharField(max_length=255)
+    transaction_status = models.CharField(max_length=50, default='pending')  # pending, completed, failed
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Data Purchase {self.id} by {self.user.username}"
+        return f"{self.bundle} on {self.network} for {self.phone_number}"
 
 # Airline Booking Model
 class AirlineBooking(models.Model):

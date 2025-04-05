@@ -3,122 +3,105 @@
 {% block content %}
 {% load static %}
 <div class="main-container">
-    <div class="right-panel">
-        <h1>Utility Payment</h1>
-        <div class="button-container">
-            <a href="{% url 'services:electricity_payment' %}" class="btn">💡 Electricity Bill</a>
-            <a href="{% url 'services:purchase_airtime' %}" class="btn">📱 Airtime Recharge</a>
-            <a href="{% url 'services:data_topup' %}" class="btn">🌐 Data Top-Up</a>
-            <a href="{% url 'services:dstv_payment' %}" class="btn">📺 DSTV</a>
-            <a href="{% url 'services:gotv_payment' %}" class="btn">📡 GOTV</a>
-            <a href="{% url 'services:startimes_payment' %}" class="btn">⭐ Startimes</a>
+    <div class="utility-bills-container">
+        <h1>Select Utility Bill</h1>
+        <div class="utility-bill-cards">
+            <a href="{% url 'services:electricity_payment' %}" class="utility-card">
+                <img src="{% static 'images/electricity.png' %}" alt="Electricity" class="utility-logo" />
+                <span>Electricity</span>
+            </a>
+            <a href="{% url 'services:dstv_payment' %}" class="utility-card">
+                <img src="{% static 'images/dstv.png' %}" alt="DSTV" class="utility-logo" />
+                <span>DSTV</span>
+            </a>
+            <a href="{% url 'services:gotv_payment' %}" class="utility-card">
+                <img src="{% static 'images/gotv.png' %}" alt="GOTV" class="utility-logo" />
+                <span>GOTV</span>
+            </a>
+            <a href="{% url 'services:startimes_payment' %}" class="utility-card">
+                <img src="{% static 'images/startimes.png' %}" alt="Startimes" class="utility-logo" />
+                <span>Startimes</span>
+            </a>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_styles %}
 <style>
-    body {
-        font-family: 'Poppins', sans-serif;
-        background: linear-gradient(135deg, #0d47a1, #1976d2);
+    /* General Reset */
+    * {
         margin: 0;
         padding: 0;
-        color: white;
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        height: 100vh;
-        overflow: hidden;
+        box-sizing: border-box;
     }
 
+    /* Main container */
     .main-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        padding: 30px;
+        padding: 20px;
+        background-color: #f4f4f4;
+        text-align: center;
     }
 
-    .right-panel {
-        width: 350px;
-        padding: 25px;
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(12px);
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        text-align: center;
-        margin-right: 40px;
-        animation: fadeIn 0.5s ease-in-out;
+    /* Utility bills container */
+    .utility-bills-container {
+        margin-top: 30px;
     }
 
     h1 {
-        color: #fff;
-        font-size: 24px;
+        font-size: 2rem;
         margin-bottom: 20px;
-        text-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        color: #333;
     }
 
-    .button-container {
+    /* Utility cards styling */
+    .utility-bill-cards {
         display: flex;
-        flex-direction: column;
-        gap: 15px;
-        align-items: center;
-    }
-
-    .btn {
-        display: flex;
-        align-items: center;
         justify-content: center;
-        width: 100%;
-        max-width: 280px;
-        padding: 14px;
-        font-size: 16px;
-        font-weight: bold;
-        color: white;
-        background: linear-gradient(135deg, #021964, #0d47a1);
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .utility-card {
+        display: block;
+        background-color: white;
+        padding: 15px;
+        width: 180px;
         border-radius: 10px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
         text-align: center;
         text-decoration: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        color: #333;
     }
 
-    .btn:hover {
-        background: linear-gradient(135deg, #0b3c8e, #1b64c1);
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    .utility-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
     }
 
-    .btn:active {
-        transform: scale(0.95);
+    .utility-logo {
+        width: 100px;
+        height: auto;
+        margin-bottom: 10px;
+        object-fit: contain;
     }
 
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    .utility-card span {
+        display: block;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #374151; /* tailwind slate-700 */
     }
 
+    /* Responsive Styles */
     @media (max-width: 768px) {
-        body {
-            justify-content: center;
+        .utility-bill-cards {
+            flex-direction: column;
             align-items: center;
         }
 
-        .right-panel {
-            margin-right: 0;
-            width: 90%;
-            padding: 20px;
-        }
-
-        .btn {
-            width: 100%;
+        .utility-card {
+            width: 80%;
+            margin: 10px 0;
         }
     }
 </style>

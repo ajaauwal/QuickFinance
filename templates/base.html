@@ -122,6 +122,16 @@ body {
     min-height: 100vh;
 }
 
+/* Main Content Background Image */
+.main-content {
+    background-image: url("{% static 'images/background.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    padding: 20px;
+}
+
 /* Header */
 header {
     display: flex;
@@ -239,7 +249,7 @@ nav .dropdown {
 }
 
 .main-content {
-    margin-left: 400px; /* Same width as sidebar */
+    margin-left: 300px; /* Same width as sidebar */
     flex-grow: 1;
     padding: 20px;
 }
@@ -291,6 +301,7 @@ nav .dropdown {
     box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
     width: 100%;
     margin-top: auto;
+    
 }
 
 .footer-links a {

@@ -7,9 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hero Bar with Service Provider Logos</title>
     <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         /* Hero Bar Style */
         .hero-bar {
-            background-color: #f0f0f0;
+            background-color: #76040400;
             padding: 20px;
             position: relative;
         }
@@ -72,7 +79,7 @@
         /* Body container for network provider categories */
         .body-container {
             padding: 40px 20px;
-            background-color: #f9f9f9;
+            background-color: #f80a0a00;
         }
 
         .network-provider-section {
@@ -82,11 +89,11 @@
         .category-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 10px;
         }
 
         .category-item {
-            padding: 10px 20px;
+            padding: 10px 10px;
             background-color: #007BFF;
             color: white;
             border-radius: 4px;
@@ -120,117 +127,257 @@
             border-radius: 4px;
         }
 
-    </style>
-</head>
-<body>
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .hero-bar-content {
+                flex-direction: column;
+                text-align: center;
+            }
 
-    
-<div class="hero-bar">
-    <div class="hero-bar-content">
-        <div class="arrow-container">
-            <i class="fas fa-chevron-down" id="dropdown-arrow"></i>
-        </div>
-        <div id="select-network-container">
-            <select id="network-select">
-                <option value="" disabled selected>Select Your Network</option>
-                <option value="mtn">MTN</option>
-                <option value="glo">Glo</option>
-                <option value="airtel">Airtel</option>
-                <option value="9mobile">9Mobile</option>
-            </select>
-        </div>
-        <div class="phone-number-container">
-            <input type="text" id="phone-number" placeholder="Enter Phone Number" maxlength="11" disabled />
-        </div>
-    </div>
+            .phone-number-container {
+                margin-top: 10px;
+            }
 
-    <div class="provider-logos" id="provider-logos">
-        <div class="logo-container">
-            <img src="{% static 'images/mtn.png' %}" alt="MTN" id="mtn-logo">
-            <img src="{% static 'images/glo.png' %}" alt="Glo" id="glo-logo">
-            <img src="{% static 'images/airtel.png' %}" alt="Airtel" id="airtel-logo">
-            <img src="{% static 'images/9mobile.png' %}" alt="9Mobile" id="nine-mobile-logo">
-        </div>
-    </div>
-</div>
+            .category-list {
+                flex-direction: column;
+                align-items: center;
+            }
 
-<div class="body-container">
-    <div id="selected-network"></div>
+            .category-item {
+                width: 100%;
+                text-align: center;
+            }
 
-    <div class="network-provider-section" id="airtel-section">
-        <div class="category-list">
-            <div class="category-item">Hot</div>
-            <div class="category-item">Daily</div>
-            <div class="category-item">Weekly</div>
-            <div class="category-item">Monthly</div>
-            <div class="category-item">3 Months+</div>
-            <div class="category-item">Social</div>
-            <div class="category-item">ROUTER</div>
-            <div class="category-item">MiFi</div>
-            <div class="category-item">Other</div>
-        </div>
-    </div>
-
-    <div class="network-provider-section" id="mtn-section">
-        <div class="category-list">
-            <div class="category-item">Hot</div>
-            <div class="category-item">Daily</div>
-            <div class="category-item">Weekly</div>
-            <div class="category-item">Monthly</div>
-            <div class="category-item">XtraValue</div>
-        </div>
-    </div>
-
-    <div class="network-provider-section" id="glo-section">
-        <div class="category-list">
-            <div class="category-item">Hot</div>
-            <div class="category-item">Daily</div>
-            <div class="category-item">Weekend</div>
-            <div class="category-item">Weekly</div>
-            <div class="category-item">Monthly</div>
-            <div class="category-item">Mega</div>
-            <div class="category-item">Social</div>
-            <div class="category-item">TV</div>
-            <div class="category-item">Campus</div>
-            <div class="category-item">Hourly</div>
-            <div class="category-item">Special</div>
-        </div>
-    </div>
-
-    <div class="network-provider-section" id="nine-mobile-section">
-        <div class="category-list">
-            <div class="category-item">Hot</div>
-            <div class="category-item">Daily</div>
-            <div class="category-item">Weekly</div>
-            <div class="category-item">Monthly</div>
-        </div>
-    </div>
-</div>
-
-<script>
-    document.getElementById('dropdown-arrow').addEventListener('click', function () {
-        const providerLogos = document.getElementById('provider-logos');
-        this.style.transform = providerLogos.style.display === 'block' ? 'rotate(0deg)' : 'rotate(180deg)';
-        providerLogos.style.display = providerLogos.style.display === 'block' ? 'none' : 'block';
-    });
-
-    document.getElementById('network-select').addEventListener('change', function () {
-        const selectedValue = this.value;
-        document.getElementById('phone-number').disabled = false;
-        document.getElementById('selected-network').innerText = `You selected ${selectedValue.charAt(0).toUpperCase() + selectedValue.slice(1)}`;
-
-        document.querySelectorAll('.network-provider-section').forEach(section => section.style.display = 'none');
-
-        if (selectedValue === 'mtn') {
-            document.getElementById('mtn-section').style.display = 'block';
-        } else if (selectedValue === 'glo') {
-            document.getElementById('glo-section').style.display = 'block';
-        } else if (selectedValue === 'airtel') {
-            document.getElementById('airtel-section').style.display = 'block';
-        } else if (selectedValue === '9mobile') {
-            document.getElementById('nine-mobile-section').style.display = 'block';
+            .logo-container {
+                gap: 10px;
+            }
         }
-    });
-</script>
 
+
+        .bundle-section {
+    margin: 40px 0;
+    padding: 0 20px;
+}
+
+.bundle-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #1f2937; /* slate-800 */
+    text-align: center;
+}
+
+.bundle-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.bundle-card {
+    background: #ffffff;
+    padding: 20px;
+    margin: 10px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+    width: 260px;
+    max-width: 100%;
+    text-align: center;
+    border: 1px solid #e5e7eb; /* tailwind slate-200 */
+}
+
+.bundle-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    border-color: #6366f1; /* tailwind indigo-500 */
+}
+
+.bundle-card h4 {
+    font-size: 1.2rem;
+    color: #374151; /* tailwind slate-700 */
+    margin-bottom: 8px;
+}
+
+.bundle-card p {
+    color: #6b7280; /* tailwind slate-500 */
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+</style>
+</head>
+
+<body>
+    <div class="hero-bar">
+        <div class="hero-bar-content">
+            <div class="arrow-container">
+                <i class="fas fa-chevron-down" id="dropdown-arrow"></i>
+            </div>
+            <div id="select-network-container">
+                <select id="network-select">
+                    <option value="" disabled selected>Select Your Network</option>
+                    <option value="mtn">MTN</option>
+                    <option value="glo">Glo</option>
+                    <option value="airtel">Airtel</option>
+                    <option value="nine-mobile">9Mobile</option>
+                </select>
+            </div>
+            <div class="phone-number-container">
+                <input type="text" id="phone-number" placeholder="Enter Phone Number" maxlength="11" disabled />
+            </div>
+        </div>
+
+        <div class="body-container">
+            <div id="selected-network"></div>
+
+            <!-- Network provider sections -->
+            <div class="network-provider-section" id="mtn-section">
+                <div class="category-list" id="mtn-categories"></div>
+                <div id="mtn-bundles"></div>
+            </div>
+
+            <div class="network-provider-section" id="airtel-section">
+                <div class="category-list" id="airtel-categories"></div>
+                <div id="airtel-bundles"></div>
+            </div>
+
+            <div class="network-provider-section" id="glo-section">
+                <div class="category-list" id="glo-categories"></div>
+                <div id="glo-bundles"></div>
+            </div>
+
+            <div class="network-provider-section" id="nine-mobile-section">
+                <div class="category-list" id="nine-mobile-categories"></div>
+                <div id="nine-mobile-bundles"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const bundles = {
+                mtn: {
+                    hot: ["1GB 1 Day N500", "2.5GB 2 Days N900", "500MB 7 Days N500", "1GB 7 Days N800", "2GB 30 Days N1,500", "3.5GB 30 Days N2,500"],
+                    daily: ["110MB 1 Day N100", "1GB 1 Day N500", "1.5GB 2 Day N600", "2GB 2 Days N750", "2.5GB 2 Days N900", "3.2GB 2 Day2 N1,000"],
+                    weekly: ["500MB 7 Days N500", "1GB 7 Days N800", "1.5GB 7 Days N1,000", "1.8GB 7 Days N1,500", "6GB 7 Days N2,500", "11GB 7 Days N3,500"],
+                    monthly: ["1.8GB 7 Days N1,500", "2GB 30 Days N1,500", "2.7GB 30 Days N2,000", "3.5GB 30 Days N2,500", "10GB 30 Days N4,500", "12.5GB 30 Days N5,500", "16.5GB 30 Days N6,500", "20GB 30 Days N7,500", "25GB 30 Days N9,000", "32GB 30 Days N11,000", "36GB 30 Days N11,000", "75GB 30 Days N18,000", "165GB 30 Days N35,000", "150GB 60 Days N40,000", "200GB 60 Days N50,000", "480GB 90 Days N90,000"],
+                    xtraValue: ["600MB 7 Days N500", "12GB 30 Days N3,500"]
+                },
+                airtel: {
+                    hot: ["18GB 7 Day N5,000", "12GB 30 Days N5,000", "10GB 7 Days N3,000", "6GB 7 Days N2,500", "5GB 2 Days N1,500", "3GB 2 Days N1,000", "1GB 1 Day N500", "250MB 1 Days N50"],
+                    daily: ["75MB 1 Day N75", "250MB 1 Day N50", "100MB 1 Day N100", "200MB 2 Days N200", "300MB 2 Days N300", "1GB 1 Day N500", "1.5GB 2 Days N600", "2GB 2 Days N750", "3GB 2 Days N1,000", "5GB 2 Days N1,500"],
+                    weekly: ["500MB 7 Days N500", "1GB 7 Days N800", "1.5GB 7 Days N1,000", "3.5GB 7 Days N1,500", "6GB 7 Days N2,500", "10GB 7 Days N3,000", "18GB 7 Days N5,000"],
+                    monthly: ["2GB 30 Days N1,500", "3GB 30 Days N2,000", "4GB 30 Days N2,500", "8GB 30 Days N3,000", "10GB 30 Days N4,000", "13GB 30 Days N5,000", "18GB 30 Days N6,000", "25GB 30 Days N8,000", "35GB 30 Days N10,000", "60GB 30 Days N15,000", "100GB 30 Days N20,000", "160GB 30 Days N30,000"],
+                    "3 months+": ["300GB 90 Days N50,000", "350GB 120 Days N60,000", "650GB 365 Days N100,000"],
+                    social: ["200MB 2 Days N100", "1GB 3 Days N300", "1.5GB 7 Days N500"],
+                    router: ["100GB 30 Days N20,000", "UNLIMITED 30 Days N50,000", "UNLIMITED 30 Days N30,000"],
+                    mifi: ["13GB 30 Days N5,000", "35GB 30 Days N10,000", "60GB 30 Days N15,000"], 
+                    others: ["400MB 7 Days N500", "1.2GB 7 Days N1,000", "2.5GB 30 Days N2,000", "12GB 30 Days N5,000", "10 mins 3 Days N100", "20 mins 7 Days N200", "30 mins 7 Days N300", "50 mins 14 Days N500", "1000 mins 30 Days N1,000", "150 mins 30 Days N1,500"]
+                },
+                glo: {
+                    hot: ["500MB 14 Days N250", "45MB 1 Day N50", "105MB 1 Day N100", "235MB 2 Day N200", "1GB 21 Days N450", "1GB 3 Days N300", "2GB 21 Days N800", "3GB 21 Days N1,200", "5GB 30 Days N2,000", "7.25GB 30 Days N2,500", "8.5GB 7 Days N2,000"],
+                    daily: ["45MB 1 Day N50", "105MB 1 Day N100", "350MB 1 Day N60", "750MB 1 Day N120"],
+                    weekend: ["2.5GB 2 Days N500", "875MB 2 Days N200"],
+                    weekly: ["1.5GB 7 Days N500", "500MB 17 Days N250", "1.1GB 14 Days N7500", "8.5GB 7 Days N2,000", "20.5GB 7 Days N5,000"],
+                    mega: ["135GB 30 Days N25,000", "165GB 30 Days N30,000", "220GB 30 Days N40,000", "310GB 60 Days N50,000", "355GB 90 Days N60,000", "475GB 90 Days N75,000", "1000GB 365 Days N150,000"],
+                    social: ["135MB 3 Days N50", "335GB 7 Days N100", "1.1GB 10 Days N300", "1.8GB 15 Days N500"],
+                    tv: ["500MB 3 Days N150", "2GB 7 Days N450", "6GB 30 Days N1,400", "2GB 7 Days N900", "6GB 30 Days N3,200"],
+                    campus: ["200MB 1 Day N100", "445MB 2 Days N200", "2GB 7 Days N500", "4.2GB 30 Days N1,000", "9.8GB 30 Days N1,000", "30GB 30 Days N5,000"],
+                    hourly: ["500MB N200", "1GB N300"],
+                    special: ["1GB 1 Day N350", "2GB 1 Day N500", "3.55GB 2 Days N600", "5.1GB 2 Days N1,000", "5.9GB 7 Days N1,500"]
+                },
+                "nine-mobile": {
+                    hot: ["650MB 1 Day N200", "1GB 1 Day N300", "2GB 3 Days N500", "100MB 1 Day N100", "6.2GB 30 Days N1,200", "7GB 7 Days N1,500", "50MB 1 Day N50", "4GB 30 Days N1,000", "9.5GB 30 Days N2,000"],
+                    daily: ["50MB 1 Day N50", "100MB 1 Days N300", "200MB 1 Day N150", "650MB 1 Days N200", "1GB 1 Days N300", "2GB 3 Days N500"],
+                    weekly: ["1GB 7 Days N1,500"],
+                    monthly: ["4GB 30 Days N1,000", "6.2GB 30 Days N1,200", "9.5GB 30 Days N2,000", "18.5GB 30 Days N4,000", "15GB 30 Days N3,000", "22GB 30 Days N5,000", "50GB 30 Days N10,000", "80GB 30 Days N15,000", "125GB 30 Days N20,000"]
+                }
+            };
+    
+            const networkSelect = document.getElementById('network-select');
+        const phoneInput = document.getElementById('phone-number');
+        const dropdownArrow = document.getElementById('dropdown-arrow');
+
+        function populateCategories(network) {
+            const categories = Object.keys(bundles[network]);
+            const categoryContainer = document.getElementById(`${network}-categories`);
+            categoryContainer.innerHTML = "";
+
+            categories.forEach(category => {
+                const item = document.createElement('div');
+                item.classList.add('category-item');
+                item.setAttribute('data-category', category);
+                item.innerText = category.charAt(0).toUpperCase() + category.slice(1);
+                categoryContainer.appendChild(item);
+            });
+
+            if (categories.length > 0) {
+                renderBundles(network, categories[0], bundles[network][categories[0]]);
+            }
+        }
+
+        function renderBundles(provider, category, bundleArray) {
+            const section = document.getElementById(`${provider}-bundles`);
+            section.innerHTML = ''; 
+
+            const cardContainer = document.createElement('div');
+            cardContainer.className = 'bundle-card-container';
+
+            bundleArray.forEach(bundle => {
+                const card = document.createElement('div');
+                card.className = 'bundle-card';
+                card.innerText = bundle;
+                card.dataset.bundle = bundle;
+                card.dataset.provider = provider;
+
+                card.addEventListener('click', () => {
+                    const phone = phoneInput.value.trim();
+                    if (!/^\d{11}$/.test(phone)) {
+                        alert('Please enter a valid 11-digit phone number.');
+                        return;
+                    }
+
+                    // Send data to backend (e.g., fetch/POST)
+                    console.log(`Purchasing ${bundle} for ${phone} on ${provider}`);
+                });
+
+                cardContainer.appendChild(card);
+            });
+
+            section.appendChild(cardContainer);
+        }
+
+        function setupCategoryClickListener(network) {
+            const categoryContainer = document.getElementById(`${network}-categories`);
+            categoryContainer.addEventListener("click", function (e) {
+                if (e.target.classList.contains("category-item")) {
+                    const category = e.target.getAttribute("data-category");
+                    renderBundles(network, category, bundles[network][category]);
+                }
+            });
+        }
+
+        networkSelect.addEventListener("change", function () {
+            const selected = this.value;
+            phoneInput.disabled = false;
+
+            document.querySelectorAll(".network-provider-section").forEach(section => {
+                section.style.display = "none";
+            });
+
+            const sectionId = `${selected}-section`;
+            document.getElementById(sectionId).style.display = "block";
+
+            populateCategories(selected);
+            setupCategoryClickListener(selected);
+        });
+
+        dropdownArrow.addEventListener('click', () => {
+            networkSelect.focus();
+        });
+    });
+    </script>
+    
 {% endblock %}
