@@ -4,170 +4,168 @@
 
 <main>
     <!-- Wallet Services Section -->
-    <div class="service-card">
+    <section class="service-card">
         <h2>Wallet Services</h2>
         <div class="subservice-container">
-            <div class="subservice">
+            <a href="{% url 'transactions:add_money' %}" class="subservice" data-tooltip="Add money to your wallet">
                 <img src="{% static 'images/fund.png' %}" alt="Add Money">
-                <a href="{% url 'transactions:add_money' %}">Add Money</a>
-            </div>
-            <div class="subservice">
+                <div>Add Money</div>
+            </a>
+            <a href="{% url 'transactions:transfer' %}" class="subservice" data-tooltip="Send money to others">
                 <img src="{% static 'images/transfer.png' %}" alt="Transfer Funds">
-                <a href="{% url 'transactions:transfer' %}">Transfer Funds</a>
-            </div>
-            <div class="subservice">
-                <img src="{% static 'images/Payment.png' %}" alt="Pay for Service">
-                <a href="{% url 'services:pay_for_service' %}">Pay for Service</a>
-            </div>
+                <div>Transfer Funds</div>
+            </a>
         </div>
-    </div>
+    </section>
 
     <!-- Airtime & Data Section -->
-    <div class="service-card">
+    <section class="service-card">
         <h2>Airtime & Data</h2>
         <div class="subservice-container">
-            <div class="subservice">
+            <a href="{% url 'services:purchase_airtime' %}" class="subservice" data-tooltip="Buy airtime instantly">
                 <img src="{% static 'images/airtime.png' %}" alt="Purchase Airtime">
-                <a href="{% url 'services:purchase_airtime' %}">Purchase Airtime</a>
-            </div>
-            <div class="subservice">
+                <div>Airtime Purchase</div>
+            </a>
+            <a href="{% url 'services:data_topup' %}" class="subservice" data-tooltip="Top up data for any network">
                 <img src="{% static 'images/data_service.png' %}" alt="Data Top-up">
-                <a href="{% url 'services:data_topup' %}">Data Top-up</a>
-            </div>
+                <div>Data Top-up</div>
+            </a>
         </div>
-    </div>
+    </section>
 
     <!-- Utility Bills Section -->
-    <div class="service-card">
+    <section class="service-card">
         <h2>Utility Bills</h2>
         <div class="subservice-container">
-            <div class="subservice">
+            <a href="{% url 'services:electricity_payment' %}" class="subservice" data-tooltip="Pay your electricity bills">
                 <img src="{% static 'images/electricity.png' %}" alt="Electricity Payment">
-                <a href="{% url 'services:electricity_payment' %}">Electricity</a>
-            </div>
-            <div class="subservice">
+                <div>Electricity</div>
+            </a>
+            <a href="{% url 'services:dstv_payment' %}" class="subservice" data-tooltip="Recharge your DSTV subscription">
                 <img src="{% static 'images/dstv.png' %}" alt="DSTV Payment">
-                <a href="{% url 'services:dstv_payment' %}">DSTV</a>
-            </div>
-            <div class="subservice">
+                <div>DSTV</div>
+            </a>
+            <a href="{% url 'services:gotv_payment' %}" class="subservice" data-tooltip="Recharge your GOTV account">
                 <img src="{% static 'images/gotv.png' %}" alt="GOTV Payment">
-                <a href="{% url 'services:gotv_payment' %}">GOTV</a>
-            </div>
-            <div class="subservice">
+                <div>GOTV</div>
+            </a>
+            <a href="{% url 'services:startimes_payment' %}" class="subservice" data-tooltip="Pay for Startimes packages">
                 <img src="{% static 'images/startimes.png' %}" alt="Startimes Payment">
-                <a href="{% url 'services:startimes_payment' %}">Startimes</a>
-            </div>
+                <div>Startimes</div>
+            </a>
         </div>
-    </div>
+    </section>
 
     <!-- Education & Finance Section -->
-    <div class="service-card">
+    <section class="service-card">
         <h2>Education & Finance</h2>
         <div class="subservice-container">
-            <div class="subservice">
+            <a href="{% url 'services:school_fees_payment' %}" class="subservice" data-tooltip="Pay school-related fees">
                 <img src="{% static 'images/school_fees.png' %}" alt="School Fees Payment">
-                <a href="{% url 'services:school_fees_payment' %}">School Fees</a>
-            </div>
-            <div class="subservice">
+                <div>School Fees</div>
+            </a>
+            <a href="{% url 'services:waec_result_checker' %}" class="subservice" data-tooltip="Check WAEC result online">
                 <img src="{% static 'images/waec.jpg' %}" alt="WAEC Result Checker">
-                <a href="{% url 'services:waec_result_checker' %}">WAEC</a>
-            </div>
+                <div>WAEC</div>
+            </a>
         </div>
-    </div>
+    </section>
 
     <!-- Travel & Booking Section -->
-    <div class="service-card">
+    <section class="service-card">
         <h2>Travel & Booking</h2>
         <div class="subservice-container">
-            <div class="subservice">
+            <a href="{% url 'services:flight_booking' %}" class="subservice" data-tooltip="Book domestic & international flights">
                 <img src="{% static 'images/flight.jpg' %}" alt="Flight Booking">
-                <a href="{% url 'services:flight_booking' %}">Flight Booking</a>
-            </div>
+                <div>Flight Booking</div>
+            </a>
         </div>
-    </div>
+    </section>
 </main>
 
 <style>
     body {
-        font-family: 'Arial', sans-serif;
-        background-color: #f9f9f9;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-image: url("{% static 'images/background.jpg' %}");
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
         margin: 0;
         padding: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
     }
-    header {
-        background-color: #007bff;
-        color: white;
-        padding: 20px;
-        width: 100%;
-        text-align: center;
-        font-size: 24px;
-        font-weight: bold;
-    }
-    main {
-        width: 90%;
-        margin: 30px auto;
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-        justify-content: center;
-    }
+
     .service-card {
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 15px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        transition: transform 0.3s ease-in-out;
+        background: rgb(254, 253, 253);
+        border-radius: 20px;
+        padding: 2rem;
+        margin: 2rem;
+        box-shadow: 0 10px 20px rgba(0, 252, 235, 0.4);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
+
     .service-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
     }
+
     .subservice-container {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        margin-top: 10px;
-    }
-    .subservice {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
     }
-    .subservice img {
-        width: 50px;
-        height: 50px;
-        border-radius: 5px;
-        margin-bottom: 10px;
-    }
-    .subservice a {
+
+    .subservice {
+        flex: 1 1 45%;
+        background: rgba(124, 187, 227, 0.518);
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
         text-decoration: none;
-        color: #007bff;
-        font-size: 14px;
-        font-weight: 600;
-        padding: 5px 10px;
-        border-radius: 5px;
-        background-color: #f0f0f0;
-        transition: background-color 0.3s ease;
+        color: #fff;
+        position: relative;
+        transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
     }
-    .subservice a:hover {
-        background-color: #e0e0e0;
+
+    .subservice:hover {
+        background: #fff;
+        color: #111;
+        transform: scale(1.05);
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
     }
-    @media (max-width: 1024px) {
-        main {
-            grid-template-columns: repeat(2, 1fr);
-        }
+
+    .subservice[data-tooltip]::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 110%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: #07b5b2;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        white-space: nowrap;
+        z-index: 10;
     }
+
+    .subservice:hover::after {
+        opacity: 1;
+    }
+
+    .subservice img {
+        width: 50%;
+        height: 75px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+    }
+
     @media (max-width: 768px) {
-        main {
-            grid-template-columns: 1fr;
+        .subservice {
+            flex: 1 1 100%;
         }
     }
 </style>

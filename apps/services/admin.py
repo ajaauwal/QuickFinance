@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import AirtimeRecharge, UtilityBill, FlightBooking, DataTopUp
+from .models import AirtimeRecharge, UtilityBills, FlightBooking, DataTopUp
 from django.contrib import admin
 from .models import ServicePayment
 
@@ -11,6 +11,6 @@ class ServicePaymentAdmin(admin.ModelAdmin):
 
 
 admin.site.register(AirtimeRecharge)
-admin.site.register(UtilityBill)
+admin.site.register(UtilityBills)
 admin.site.register(FlightBooking)
 admin.site.register(DataTopUp)

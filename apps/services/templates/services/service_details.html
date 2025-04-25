@@ -45,6 +45,7 @@
         flex-direction: column;
         gap: 15px;
         align-items: center;
+        margin-top: 30px;
     }
 
     /* Service Link Button */
@@ -66,17 +67,34 @@
         background: #0277b8;
         transform: scale(1.05);
     }
+
+    /* Button Styling */
+    .btn-primary {
+        background-color: #0289d1;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        transition: background 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #0277b8;
+    }
 </style>
 
 <div class="main-content">
     <!-- Services Section -->
     <div class="services-section">
-        <h1>Our Services</h1>
+        <h1>Service Details</h1>
+        <h2>{{ service.name }}</h2>
+        <p><strong>Category:</strong> {{ service.category }}</p>
+        <p><strong>Description:</strong> {{ service.description }}</p>
+        <a href="{% url 'services:service_details' %}" class="btn btn-primary">Back to services</a>
     </div>
 
-   
-
-        <!-- Newly Added Services -->
+    <!-- Newly Added Services -->
+    <div class="service-list">
         <a href="{% url 'services:electricity_payment' %}" class="service-link">💡 Electricity Bill</a>
         <a href="{% url 'services:purchase_airtime' %}" class="service-link">📱 Airtime Recharge</a>
         <a href="{% url 'services:data_topup' %}" class="service-link">🌐 Data Top-Up</a>
@@ -87,7 +105,7 @@
         <a href="{% url 'services:waec_result_checker' %}" class="service-link">📜 WAEC Result Checker</a>
         <a href="{% url 'transactions:transfer' %}" class="service-link">🔄 Transfer Funds</a>
         <a href="{% url 'transactions:add_money' %}" class="service-link">➕ Add Money</a>
-        <a href="{% url 'services:flight_booking' %}">Flight Booking</a>
+        <a href="{% url 'services:flight_booking' %}" class="service-link">✈️ Flight Booking</a>
     </div>
 </div>
 

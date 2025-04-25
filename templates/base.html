@@ -1,46 +1,183 @@
 {% load static %}
+{% load humanize %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuickFinance</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-</head>
-<body>
-    <!-- Start of Tawk.to Script -->
-    <script type="text/javascript">
-        var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
-        (function() {
-            var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
-            s1.async = true;
-            s1.src = 'https://embed.tawk.to/677317cb49e2fd8dfe00af99/1igcp9tul';
-            s1.charset = 'UTF-8';
-            s1.setAttribute('crossorigin', '*');
-            s0.parentNode.insertBefore(s1, s0);
-        })();
-    </script>
-    <!-- End of Tawk.to Script -->
 
-    <div class="overlay"></div>
-    
-    <!-- Header Section -->
-    <header>
-        <div class="logo">
-            <img src="{% static 'images/quickfinance_logo.png' %}" alt="QuickFinance Logo">
-            <span>QuickFinance</span>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuickFinance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: url("{% static 'images/background.jpg' %}") no-repeat center/cover;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .menu-item {
+            display: block;
+            padding: 10px 15px;
+            margin: 10px 0;
+            background-color: #f8f8f8;
+            color: #333;
+            border-radius: 8px;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .menu-item:hover {
+            background-color: #6c63ff;
+            color: white;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            min-width: 150px;
+            top: 40px;
+            right: 0;
+            z-index: 1001;
+        }
+
+        .relative:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-content a {
+            display: block;
+            padding: 10px 12px;
+            color: #333;
+            text-decoration: none;
+        }
+
+        /* Remove hover behavior and hide dropdown by default */
+        .relative .dropdown-content {
+            display: none;
+            position: absolute;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            min-width: 150px;
+            top: 40px;
+            right: 0;
+            z-index: 1001;
+        }
+
+        .relative.active .dropdown-content {
+            display: block;
+        }
+
+
+        .dropdown-content a:hover {
+            background: #6c63ff;
+            color: white;
+        }
+
+        .footer-container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 30px 20px;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .footer-links {
+            margin-bottom: 15px;
+        }
+
+        .footer-links a {
+            margin: 0 12px;
+            text-decoration: none;
+            color: #ccc;
+            font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: #00bfff;
+            text-shadow: 0 0 5px rgba(0, 191, 255, 0.5);
+        }
+
+        .footer-social {
+            margin: 15px 0;
+        }
+
+        .footer-social img {
+            width: 28px;
+            margin: 0 10px;
+            filter: grayscale(100%);
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+
+        .footer-social img:hover {
+            transform: scale(1.2);
+            filter: grayscale(0%);
+        }
+
+        .footer-bottom {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #bbb;
+            opacity: 0.8;
+        }
+
+/* Transaction History Section */
+.transaction-history-toggle {
+    background-color: #f8f8f8;
+    color: #333;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.transaction-history-toggle:hover {
+    background-color: #6c63ff;
+    color: white;
+}
+
+/* Hidden transaction list by default */
+.transaction-list {
+    display: none;
+    list-style: none;
+    padding-left: 0;
+}
+
+.transaction-list li {
+    background-color: #ffffff;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+
+    </style>
+</head>
+
+<body class="font-poppins flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <header class="flex justify-between items-center p-5 backdrop-blur-md bg-white/70 shadow-md fixed w-full top-0 z-50">
+        <div class="flex items-center space-x-3">
+            <img src="{% static 'images/quickfinance_logo.png' %}" alt="QuickFinance Logo" class="w-12 h-12" />
+            <span class="text-xl font-bold text-purple-700">QuickFinance</span>
         </div>
-        
-        <div class="search-bar">
-            <form action="{% url 'services:search' %}" method="get">
-                <input type="text" name="q" placeholder="Search..." class="search-input">
-                <button type="submit" class="search-button">Search</button>
-            </form>
-        </div>
-        
-        <nav>
-            <div class="dropdown">
-                <a href="#">Hi, {{ user.username }}</a>
+        <nav class="flex space-x-4">
+            <div class="relative group">
+                <button class="text-lg font-medium text-gray-800">Hi, {{ user.username }}</button>
                 <div class="dropdown-content">
                     <a href="{% url 'transactions:profile' %}">Profile</a>
                     <a href="{% url 'accounts:logout' %}">Logout</a>
@@ -48,351 +185,142 @@
             </div>
         </nav>
     </header>
-    
-    <!-- Sidebar -->
-    <div class="left-panel">
-        {% if wallet %}
-        <div class="wallet-info-banner">
-            <div class="wallet-balance">
-                <h2>Available Balance</h2>
-                <p class="balance-amount">
-                    <strong>{{ wallet_currencies.0.balance|floatformat:2 }}</strong>
-                    <span class="currency-symbol">{{ wallet_currencies.0.currency }}</span>
-                </p>
-                <small>Last updated: {{ wallet.updated_at|date:"D, d M Y H:i" }}</small>
-            </div>
-        </div>
-        {% else %}
-        <div class="no-wallet">
-            <p class="alert-warning">No wallet found. Please create one to get started.</p>
-        </div>
-        {% endif %}
 
-        <!-- Sidebar Menu -->
-        <a href="{% url 'accounts:index' %}" class="menu-item">Home</a>
-        <a href="{% url 'transactions:manage_fund' %}" class="menu-item">Manage Fund</a>
-        <a href="{% url 'services:purchase_airtime' %}" class="menu-item">Airtime</a>
-        <a href="{% url 'services:data_topup' %}" class="menu-item">Data</a>
-        <a href="{% url 'services:utility_bills' %}" class="menu-item">Utility Bills</a>
-        <a href="{% url 'transactions:add_money' %}" class="menu-item">Add Money</a>
-        <a href="{% url 'services:pay_for_service' %}" class="menu-item">Payment</a>
+    <!-- Main Content Area -->
+    <div class="flex flex-1 pt-20">
+        <!-- Sidebar -->
+<aside class="w-64 bg-white/95 text-gray-900 p-5 min-h-[calc(100vh-5rem)] overflow-y-auto shadow-md">
+    {% if wallet %}
+    <div class="bg-white p-4 rounded-md shadow-lg text-gray-800 mb-6">
+        <h2 class="text-lg font-semibold">Available Balance</h2>
+        <p class="text-xl font-bold text-purple-700">
+            {{ wallet_currencies.0.balance|floatformat:2|intcomma }}
+            <span class="text-sm text-gray-500">{{ wallet_currencies.0.currency }}</span>
+        </p>
+        <small class="text-sm text-gray-500">Last updated: {{ wallet.updated_at|date:"D, d M Y H:i" }}</small>
     </div>
-    
-    <!-- Main Content Section -->
-    <div class="main-content">
-        {% block content %}{% endblock %}
+    {% else %}
+    <div class="bg-yellow-100 p-4 rounded-md text-gray-800 mb-6">
+        <p>No wallet found. Please create one to get started.</p>
     </div>
-    
-    <!-- Footer Section -->
-    <footer class="footer-container">
-        <div class="footer-content">
-            <div class="footer-links">
-                <a href="/privacy-policy">Privacy Policy</a>
-                <a href="/terms-of-service">Terms of Service</a>
-                <a href="/terms_and_conditions">Terms and Conditions</a>
-                <a href="/contact">Contact</a>
-                <a href="/about">About</a>
+    {% endif %}
+
+    <!-- Sidebar Menu Items -->
+    <a href="{% url 'accounts:index' %}" class="menu-item">Dashboard</a>
+    <a href="{% url 'transactions:transfer' %}" class="menu-item">Transfer Money</a>
+    <a href="{% url 'services:purchase_airtime' %}" class="menu-item">Buy Airtime</a>
+    <a href="{% url 'services:data_topup' %}" class="menu-item">TopUp Data</a>
+    <a href="{% url 'transactions:add_money' %}" class="menu-item">Add Money</a>
+    <a href="{% url 'services:utility_bills' %}" class="menu-item">TV and Electricity</a>
+    <a href="{% url 'services:flight_booking' %}" class="menu-item">Flight Booking</a>
+
+   <!-- Transaction History Section -->
+<div class="mt-6">
+    <button class="menu-item transaction-history-toggle" onclick="toggleTransactionHistory()">Transaction History</button>
+    <ul id="transaction-history" class="transaction-list mt-2 hidden">
+        <!-- Check if there are recent transactions -->
+        {% if recent_transactions %}
+            {% for transaction in recent_transactions %}
+            <li class="p-2 bg-gray-100 rounded-md shadow-sm mb-2">
+                <div class="flex justify-between">
+                    <span>{{ transaction.description }}</span>
+                    <span class="text-purple-700">{{ transaction.amount|floatformat:2 }}</span>
+                </div>
+                <small class="text-sm text-gray-500">{{ transaction.created_at|date:"D, d M Y H:i" }}</small>
+            </li>
+            {% endfor %}
+        {% else %}
+            <li class="p-2 text-gray-500">No recent transactions available.</li>
+        {% endif %}
+        
+        <!-- Show more transactions when the button is clicked -->
+        <div id="older-transactions" class="hidden">
+            {% if older_transactions %}
+                {% for transaction in older_transactions %}
+                <li class="p-2 bg-gray-100 rounded-md shadow-sm mb-2">
+                    <div class="flex justify-between">
+                        <span>{{ transaction.description }}</span>
+                        <span class="text-purple-700">{{ transaction.amount|floatformat:2 }}</span>
+                    </div>
+                    <small class="text-sm text-gray-500">{{ transaction.created_at|date:"D, d M Y H:i" }}</small>
+                </li>
+                {% endfor %}
+            {% else %}
+                <li class="p-2 text-gray-500">No older transactions available.</li>
+            {% endif %}
+        </div>
+    </ul>
+</div>
+</aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer-container p-6 text-white">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+            <div class="flex space-x-4 mb-4 md:mb-0">
+                <a href="/privacy-policy" class="text-sm">Privacy Policy</a>
+                <a href="/terms-of-service" class="text-sm">Terms of Service</a>
+                <a href="/terms_and_conditions" class="text-sm">Terms and Conditions</a>
+                <a href="/contact" class="text-sm">Contact</a>
+                <a href="/about" class="text-sm">About</a>
             </div>
-            <div class="footer-social">
-                <a href="https://www.facebook.com/yourprofile" target="_blank"><img src="{% static 'images/facebook.png' %}" alt="Facebook"></a>
-                <a href="https://twitter.com/yourprofile" target="_blank"><img src="{% static 'images/twitter.png' %}" alt="Twitter"></a>
-                <a href="https://www.instagram.com/yourprofile" target="_blank"><img src="{% static 'images/instagram.png' %}" alt="Instagram"></a>
-                <a href="https://www.linkedin.com/in/yourprofile" target="_blank"><img src="{% static 'images/linkedin.png' %}" alt="LinkedIn"></a>
-                <a href="https://www.youtube.com/in/yourprofile" target="_blank"><img src="{% static 'images/youtube.png' %}" alt="YouTube"></a>
+            <div class="flex space-x-3">
+                <a href="https://www.facebook.com/yourprofile" target="_blank">
+                    <img src="{% static 'images/facebook.png' %}" alt="Facebook" class="w-5 h-5" />
+                </a>
+                <a href="https://twitter.com/yourprofile" target="_blank">
+                    <img src="{% static 'images/twitter.png' %}" alt="Twitter" class="w-5 h-5" />
+                </a>
+                <a href="https://www.instagram.com/yourprofile" target="_blank">
+                    <img src="{% static 'images/instagram.png' %}" alt="Instagram" class="w-5 h-5" />
+                </a>
+                <a href="https://www.linkedin.com/in/yourprofile" target="_blank">
+                    <img src="{% static 'images/linkedin.png' %}" alt="LinkedIn" class="w-5 h-5" />
+                </a>
+                <a href="https://www.youtube.com/in/yourprofile" target="_blank">
+                    <img src="{% static 'images/youtube.png' %}" alt="YouTube" class="w-5 h-5" />
+                </a>
             </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 QuickFinance. All rights reserved.</p>
-            </div>
+            <p class="mt-4 md:mt-0 text-sm">&copy; 2025 QuickFinance. All rights reserved.</p>
         </div>
     </footer>
 </body>
+
+<script>
+    // Get the dropdown container
+    const dropdown = document.querySelector('.relative');
+    
+    // Add a click event listener to the button to toggle visibility
+    dropdown.addEventListener('click', function() {
+        this.classList.toggle('active');
+    });
+    
+    // Close the dropdown if clicked anywhere else on the page
+    window.addEventListener('click', function(event) {
+        if (!dropdown.contains(event.target)) {
+            dropdown.classList.remove('active');
+        }
+    });
+
+   // Function to toggle transaction history visibility
+function toggleTransactionHistory() {
+    const transactionHistory = document.getElementById('transaction-history');
+    const olderTransactions = document.getElementById('older-transactions');
+
+    // Toggle visibility of the transaction list
+    transactionHistory.classList.toggle('hidden');
+
+    // Toggle visibility of older transactions if they exist
+    if (olderTransactions) {
+        olderTransactions.classList.toggle('hidden');
+    }
+}
+
+</script>
 </html>
 
-
-<style>
-/* General Styles */
-body {
-    font-family: 'Poppins', sans-serif;
-    background: url("../images/hero-bg.jpg") no-repeat center/cover;
-    color: #333;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
-
-/* Main Content Background Image */
-.main-content {
-    background-image: url("{% static 'images/background.jpg' %}");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    min-height: 100vh;
-    padding: 20px;
-}
-
-/* Header */
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(1, 42, 108, 0.468);
-    padding: 15px 30px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    position: relative;
-    width: 100%;
-    top: 0;
-    left: 0;
-    z-index: 1000;
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-}
-
-.logo img {
-    width: 45px;
-    margin-right: 12px;
-}
-
-/* Search Bar */
-.search-bar input {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 20px;
-    width: 250px;
-    transition: width 0.3s ease-in-out, border-color 0.3s;
-}
-
-.search-bar input:focus {
-    width: 300px;
-    border-color: #007bff;
-    outline: none;
-}
-
-.search-button {
-    padding: 10px 15px;
-    background: #007bff;
-    border: none;
-    color: rgb(6, 61, 139);
-    border-radius: 20px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.search-button:hover {
-    background: #0056b3;
-}
-
-
-/* Navigation */
-nav .dropdown {
-    position: relative;
-}
-
-.dropdown a {
-    text-decoration: none;
-    color: #333;
-    padding: 10px 15px;
-    border-radius: 5px;
-    transition: background 0.3s;
-}
-
-.dropdown:hover a {
-    background: rgba(0, 123, 255, 0.1);
-}
-
-.dropdown-content {
-    display: none;
-    position: absolute;
-    background: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    padding: 10px;
-    right: 0;
-    top: 40px;
-    min-width: 150px;
-    z-index: 1001;
-}
-
-.dropdown:hover .dropdown-content {
-    display: block;
-}
-
-.dropdown-content a {
-    display: block;
-    padding: 8px 12px;
-    color: #333;
-    text-decoration: none;
-    transition: background 0.3s;
-}
-
-.dropdown-content a:hover {
-    background: #007bff;
-    color: white;
-}
-
-/* Left Sidebar */
-.left-panel {
-    width: 250px;
-    background: rgba(255, 255, 255, 0.98);
-    padding: 20px;
-    box-shadow: 4px 0px 8px rgba(0, 0, 0, 0.1);
-    position: fixed;
-    height: 100vh;
-    overflow-y: auto;
-    top: 0;
-    left: 0;
-    padding-top: 100px;
-}
-
-.main-content {
-    margin-left: 300px; /* Same width as sidebar */
-    flex-grow: 1;
-    padding: 20px;
-}
-
-.menu-item {
-    display: block;
-    padding: 12px 20px;
-    margin: 6px 0;
-    background: #f8f9fa;
-    border-radius: 6px;
-    text-decoration: none;
-    color: #333;
-    font-weight: 500;
-    transition: all 0.3s ease-in-out;
-}
-
-.menu-item:hover {
-    background: #007bff;
-    color: white;
-    transform: translateX(5px);
-}
-
-.wallet-info-banner {
-    background: #007bff;
-    color: white;
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.wallet-balance h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.balance-amount {
-    font-size: 22px;
-    font-weight: bold;
-    margin: 10px 0;
-}
-
-/* Footer */
-.footer-container {
-    text-align: center;
-    background: rgba(255, 255, 255, 0.98);
-    padding: 20px;
-    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    margin-top: auto;
-    
-}
-
-.footer-links a {
-    margin: 0 15px;
-    text-decoration: none;
-    color: #333;
-    font-weight: 500;
-    transition: color 0.3s;
-}
-
-.footer-links a:hover {
-    color: #007bff;
-}
-
-.footer-social {
-    margin-top: 10px;
-}
-
-.footer-social img {
-    width: 30px;
-    margin: 0 8px;
-    transition: transform 0.3s;
-}
-
-.footer-social img:hover {
-    transform: scale(1.1);
-}
-
-.footer-bottom {
-    margin-top: 10px;
-    font-size: 14px;
-    color: #777;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    header {
-        flex-direction: column;
-        align-items: center;
-        padding: 10px;
-    }
-
-    .search-bar input {
-        width: 200px;
-    }
-
-    .search-bar input:focus {
-        width: 250px;
-    }
-
-    .left-panel {
-        width: 220px;
-        padding: 15px;
-    }
-
-    .menu-item {
-        font-size: 14px;
-    }
-
-    .footer-links a {
-        display: block;
-        margin: 5px 0;
-    }
-
-    .footer-social img {
-        width: 25px;
-        margin: 5px;
-    }
-}
-</style>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const searchInput = document.querySelector(".search-bar input");
-        const searchButton = document.querySelector(".search-button");
-    
-        searchButton.addEventListener("click", function () {
-            const query = searchInput.value.trim();
-            if (query !== "") {
-                // Replace with your actual search URL or functionality
-                alert("Searching for: " + query);
-                // window.location.href = `/search?q=${encodeURIComponent(query)}`;
-            } else {
-                alert("Please enter a search term.");
-            }
-        });
-    
-        searchInput.addEventListener("keypress", function (event) {
-            if (event.key === "Enter") {
-                searchButton.click();
-            }
-        });
-    });
-    </script>
-    

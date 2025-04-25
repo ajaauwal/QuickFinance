@@ -1,6 +1,8 @@
-from django.contrib.auth.models import User  # Import User model
 from rest_framework import serializers
-from apps.transactions.models import Profile, Wallet
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 
 # Serializer for creating a new user and registering them
 class UserSerializer(serializers.ModelSerializer):

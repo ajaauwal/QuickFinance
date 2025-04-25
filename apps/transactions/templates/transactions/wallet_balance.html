@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load humanize %}
 
 {% block content %}
 
@@ -14,29 +13,25 @@
 
 <div class="wallet-container">
     <div class="wallet-content">
+
         <span class="close-btn" onclick="closeWalletForm()">×</span>
         <h2>Wallet</h2>
 
+        {% load humanize %}
+        <!-- Display balance with commas -->
         <div class="wallet-info">
             <p id="wallet-balance">Balance: NGN{{ wallet.balance|intcomma }}</p>
         </div>
 
+        <!-- Transaction History Link -->
         <h3>Transaction History</h3>
         <form method="GET" action="{% url 'transactions:transaction_history' %}">
             <button type="submit" class="btn btn-info">View History</button>
         </form>
 
+        <!-- Add Funds and Debit Buttons -->
         <button class="btn btn-success" onclick="updateWallet(50)">Credit NGN 50</button>
         <button class="btn btn-danger" onclick="updateWallet(-30)">Debit NGN 30</button>
-
-        <!-- Add Money Button -->
-        <button id="add-money-btn" class="btn btn-primary">Add Money</button>
-
-        <!-- Add Money Form -->
-        <form id="add-money-form" style="display:none;">
-            <input type="number" id="add-amount" placeholder="Enter amount" required>
-            <button type="submit" class="btn btn-success">Proceed</button>
-        </form>
     </div>
 </div>
 
@@ -50,9 +45,7 @@
     </div>
 {% endif %}
 
-{% endblock %}
 
-{% block extra_styles %}
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -86,24 +79,26 @@
         margin: 20px auto;
         padding: 20px;
         max-width: 600px;
-        background: rgba(255, 255, 255, 0.1);
+        background: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         border-radius: 8px;
-        text-align: center;
     }
 
     .wallet-content {
+        background-color: rgba(255, 255, 255, 0);
         padding: 40px;
         border-radius: 12px;
         box-shadow: 0 0 20px rgba(3, 21, 119, 0.5);
         max-width: 500px;
         width: 100%;
         color: #d70cd0;
+        text-align: center;
     }
 
     h2 {
         font-size: 2.5rem;
         color: white;
-        text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 4px 6px rgba(0, 0, 0, 0.4);
         margin-bottom: 20px;
     }
 
@@ -113,48 +108,120 @@
         margin-bottom: 20px;
     }
 
-    button.btn {
+    a.btn, button.btn {
+        display: inline-block;
         margin: 10px 0;
         padding: 12px 20px;
         border-radius: 8px;
+        text-decoration: none;
         font-size: 1rem;
         transition: all 0.3s ease-in-out;
     }
 
-    .btn-success { background-color: #28a745; color: white; }
-    .btn-danger { background-color: #dc3545; color: white; }
-    .btn-info { background-color: #17a2b8; color: white; }
-    .btn-primary { background-color: #007bff; color: white; }
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+    }
 
-    .btn:hover {
+    .btn-success:hover {
+        background-color: #218838;
         transform: translateY(-4px);
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
     }
 
-    .close-btn {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        font-size: 24px;
+    .btn-danger {
+        background-color: #dc3545;
         color: white;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .btn-info {
+        background-color: #17a2b8;
+        color: white;
+    }
+
+    .btn-info:hover {
+        background-color: #138496;
+    }
+
+    .close-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        font-size: 30px;
+        color: #ffffff;
         background: transparent;
         border: none;
         cursor: pointer;
+        z-index: 1000;
     }
 
-    .close-btn:hover { color: #ff0000; }
+    .close-btn:hover {
+        color: #ff0000;
+    }
 
+    .footer-container {
+    background-color: hsl(20, 65%, 86%);
+    color: #ffffff;
+    text-align: center;
+    padding: 20px;
+    border-top: 4px solid #ffffff;
+    height: 100px; /* Set height to make it square */
+}
+
+.footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.footer-links a {
+    color: #00aaff;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+    color: #ffffff;
+}
+
+.footer-social {
+    margin-bottom: 15px;
+}
+
+.footer-social a img {
+    width: 30px;
+    height: 30px;
+    margin: 0 10px;
+    transition: transform 0.3s ease;
+}
+
+.footer-social a img:hover {
+    transform: scale(1.2);
+}
+
+.footer-bottom {
+    font-size: 14px;
+}
 </style>
-{% endblock %}
 
-{% block extra_scripts %}
+<!-- Include JavaScript to fetch the wallet balance -->
 <script>
-document.getElementById('add-money-btn').addEventListener('click', function() {
-    document.getElementById('add-money-form').style.display = 'block';
+  document.getElementById('add-money-btn').addEventListener('click', function() {
+    showAddMoneyForm();
 });
 
 document.getElementById('add-money-form').addEventListener('submit', function(event) {
-    event.preventDefault();
+    event.preventDefault(); // Prevent form submission
 
     const amount = parseFloat(document.getElementById('add-amount').value);
     if (isNaN(amount) || amount <= 0) {
@@ -162,18 +229,20 @@ document.getElementById('add-money-form').addEventListener('submit', function(ev
         return;
     }
 
+    // Send the amount to the backend to initiate the Paystack payment
     fetch('/paystack/payment/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken()
         },
         body: JSON.stringify({ amount: amount })
     })
     .then(response => response.json())
     .then(data => {
         if (data.payment_url) {
-            window.location.href = data.payment_url;
+            // Open Paystack payment modal
+            const paymentUrl = data.payment_url;
+            window.location.href = paymentUrl;  // Redirect to Paystack payment page
         } else {
             alert('Error initializing payment. Please try again.');
         }
@@ -184,16 +253,7 @@ document.getElementById('add-money-form').addEventListener('submit', function(ev
     });
 });
 
-// Function to get CSRF token
-function getCSRFToken() {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.startsWith('csrftoken=')) {
-            return cookie.split('=')[1];
-        }
-    }
-    return '';
-}
 </script>
 {% endblock %}
+
+

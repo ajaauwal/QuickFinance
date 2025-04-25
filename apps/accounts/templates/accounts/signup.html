@@ -2,8 +2,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Sign Up</title>
     <link rel="stylesheet" href="{% static 'styles.css' %}">
     <style>
@@ -40,7 +40,7 @@
         }
 
         .signup-container {
-            max-width: 450px;
+            max-width: 600px;
             width: 100%;
             padding: 30px;
             background: rgba(255, 255, 255, 0.95);
@@ -52,23 +52,41 @@
         h2 {
             color: #007BFF;
             font-weight: 600;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         form {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+
+        @media (max-width: 600px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
         }
 
         label {
-            text-align: left;
             font-weight: 500;
+            margin-bottom: 5px;
             color: #007BFF;
         }
 
         input {
-            width: 100%;
             padding: 12px;
             border-radius: 8px;
             border: 1px solid #ccc;
@@ -80,6 +98,12 @@
             border-color: #007BFF;
             box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
             outline: none;
+        }
+
+        .error {
+            color: red;
+            font-size: 12px;
+            margin-top: 5px;
         }
 
         button {
@@ -111,7 +135,17 @@
             <h2>Create an Account</h2>
             <form id="signupForm" method="POST" action="{% url 'accounts:signup' %}">
                 {% csrf_token %}
-                {{ form.as_p }}
+                <div class="form-grid">
+                    {% for field in form %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="error">{{ field.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
                 <button type="submit">Sign Up</button>
             </form>
         </div>

@@ -1,107 +1,95 @@
 {% extends 'base.html' %}
 
-{% block content %}
 {% load static %}
-<div class="main-container">
-    <div class="utility-bills-container">
-        <h1>Select Utility Bill</h1>
-        <div class="utility-bill-cards">
-            <a href="{% url 'services:electricity_payment' %}" class="utility-card">
-                <img src="{% static 'images/electricity.png' %}" alt="Electricity" class="utility-logo" />
-                <span>Electricity</span>
-            </a>
-            <a href="{% url 'services:dstv_payment' %}" class="utility-card">
-                <img src="{% static 'images/dstv.png' %}" alt="DSTV" class="utility-logo" />
-                <span>DSTV</span>
-            </a>
-            <a href="{% url 'services:gotv_payment' %}" class="utility-card">
-                <img src="{% static 'images/gotv.png' %}" alt="GOTV" class="utility-logo" />
-                <span>GOTV</span>
-            </a>
-            <a href="{% url 'services:startimes_payment' %}" class="utility-card">
-                <img src="{% static 'images/startimes.png' %}" alt="Startimes" class="utility-logo" />
-                <span>Startimes</span>
-            </a>
+{% block content %}
+<div class="utility-container">
+    <div class="utility-panel">
+        <h1>Pay Your Utility Bills</h1>
+        <p class="subtitle">Choose a service below to proceed with payment</p>
+
+        <div class="utility-buttons">
+            <a href="{% url 'services:electricity_payment' %}" class="utility-btn">💡 Electricity</a>
+            <a href="{% url 'services:dstv_payment' %}" class="utility-btn">📺 DSTV</a>
+            <a href="{% url 'services:gotv_payment' %}" class="utility-btn">📺 GOTV</a>
+            <a href="{% url 'services:startimes_payment' %}" class="utility-btn">⭐ Startimes</a>
         </div>
     </div>
 </div>
 
 <style>
-    /* General Reset */
-    * {
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
         margin: 0;
         padding: 0;
-        box-sizing: border-box;
+        color: #fff;
     }
 
-    /* Main container */
-    .main-container {
-        padding: 20px;
-        background-color: #f4f4f4;
-        text-align: center;
-    }
-
-    /* Utility bills container */
-    .utility-bills-container {
-        margin-top: 30px;
-    }
-
-    h1 {
-        font-size: 2rem;
-        margin-bottom: 20px;
-        color: #333;
-    }
-
-    /* Utility cards styling */
-    .utility-bill-cards {
+    .utility-container {
         display: flex;
         justify-content: center;
-        gap: 20px;
-        flex-wrap: wrap;
+        align-items: center;
+        min-height: 90vh;
+        padding: 30px 20px;
     }
 
-    .utility-card {
-        display: block;
-        background-color: white;
-        padding: 15px;
-        width: 180px;
-        border-radius: 10px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    .utility-panel {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 40px 30px;
+        width: 100%;
+        max-width: 500px;
         text-align: center;
-        text-decoration: none;
-        color: #333;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(8px);
     }
 
-    .utility-card:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-    }
-
-    .utility-logo {
-        width: 100px;
-        height: auto;
+    .utility-panel h1 {
+        font-size: 2rem;
         margin-bottom: 10px;
-        object-fit: contain;
+        color: #ffffff;
     }
 
-    .utility-card span {
-        display: block;
+    .subtitle {
         font-size: 1rem;
-        font-weight: 600;
-        color: #374151; /* tailwind slate-700 */
+        margin-bottom: 25px;
+        color: #ddd;
     }
 
-    /* Responsive Styles */
-    @media (max-width: 768px) {
-        .utility-bill-cards {
-            flex-direction: column;
-            align-items: center;
+    .utility-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .utility-btn {
+        display: inline-block;
+        width: 100%;
+        max-width: 300px;
+        padding: 15px 25px;
+        background-color: #1a237e;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: background 0.3s ease, transform 0.2s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .utility-btn:hover {
+        background-color: #0d47a1;
+        transform: translateY(-2px);
+    }
+
+    @media (max-width: 600px) {
+        .utility-panel {
+            padding: 30px 20px;
         }
 
-        .utility-card {
-            width: 80%;
-            margin: 10px 0;
+        .utility-btn {
+            font-size: 0.95rem;
         }
     }
 </style>

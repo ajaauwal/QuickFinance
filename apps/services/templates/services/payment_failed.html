@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load static %}
+<div class="main-container">
+    <div class="right-panel">
+        <h1>Payment Failed</h1>
+        <p>Unfortunately, your payment could not be processed. Please try again later or contact support.</p>
+        <a href="{% url 'home' %}" class="btn-submit">Go to Homepage</a>
+    </div>
+</div>
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: radial-gradient(circle at top left, #d32f2f, #e57373);
+        margin: 0;
+        padding: 0;
+        color: white;
+        overflow-x: hidden;
+    }
+
+    .main-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        padding: 20px;
+    }
+
+    .right-panel {
+        background: rgba(0, 0, 0, 0.6);
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+        max-width: 480px;
+        width: 100%;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 28px;
+        color: #fff;
+        margin-bottom: 20px;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+    }
+
+    p {
+        font-size: 18px;
+        color: #f0f0f0;
+        margin-bottom: 30px;
+    }
+
+    .btn-submit {
+        width: 100%;
+        background-color: #e57373;
+        color: white;
+        padding: 15px;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-submit:hover {
+        background-color: #d32f2f;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+</style>
+
+{% endblock %}

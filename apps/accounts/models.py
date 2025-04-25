@@ -1,36 +1,37 @@
-from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.db import models
+from django.utils.translation import gettext_lazy as _
 
-# Gender choices for the gender field
+
+
+# Gender choices for the user model
 GENDER_CHOICES = [
     ('M', 'Male'),
     ('F', 'Female'),
     ('O', 'Other'),
 ]
 
+
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+
 class User(AbstractUser):
     """
-    Custom user model with additional fields for profile information.
+    Custom user model aligned with SignUpForm.
+    Email is used as the primary identifier instead of username.
     """
-    surname = models.CharField(max_length=30)  # Ensure it doesn't conflict with last_name
-    other_name = models.CharField(max_length=30, blank=True, null=True)
-    date_of_birth = models.DateField(blank=True, null=True)
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
-    registration_number = models.CharField(max_length=50, unique=True, blank=True, null=True)
-    school = models.CharField(max_length=100, blank=True, null=True)
-    department = models.CharField(max_length=100, blank=True, null=True)
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30, blank=True, null=True)
     phone = models.CharField(max_length=15, unique=True, blank=True, null=True)
-    
-    # Ensure email is unique for authentication
     email = models.EmailField(unique=True)
 
-    # Override the default USERNAME_FIELD to use email instead of username
+    # Email will be used for login
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'surname', 'registration_number']
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     def __str__(self):
-        return f"{self.first_name} {self.surname} ({self.email})"
+        return f"{self.first_name} {self.last_name} ({self.email})"
 
     class Meta:
         app_label = 'accounts'
@@ -45,8 +46,8 @@ class InviteFriend(models.Model):
     friend_name = models.CharField(max_length=255)
     friend_email = models.EmailField()
     invited_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         related_name='sent_invitations'
     )
     date_invited = models.DateTimeField(auto_now_add=True)
@@ -71,8 +72,8 @@ class HelpRequest(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
-        max_length=50, 
-        choices=[('Pending', 'Pending'), ('Resolved', 'Resolved')], 
+        max_length=50,
+        choices=[('Pending', 'Pending'), ('Resolved', 'Resolved')],
         default='Pending'
     )
 

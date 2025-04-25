@@ -25,7 +25,8 @@ SECRET_KEY = env('SECRET_KEY', default='your-django-secret-key')
 DEBUG = env.bool('DEBUG', default=True)
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['127.0.0.1', 'localhost'])
 
-# Website URL
+# Website URL and SITE_DOMAIN for email verification
+SITE_DOMAIN = env('SITE_DOMAIN', default='localhost:8000')  # Add this line for SITE_DOMAIN
 WEBSITE_URL = env('WEBSITE_URL', default='http://127.0.0.1:8000/')
 
 # Installed applications
@@ -133,7 +134,6 @@ STATICFILES_DIRS = [
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

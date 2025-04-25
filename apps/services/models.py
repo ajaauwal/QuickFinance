@@ -2,21 +2,9 @@ from django.db import models
 from django.conf import settings
 
 
-
-
-class ServicePayment(models.Model):
-    service_name = models.CharField(max_length=100, help_text="Name of the service being paid for")
-    customer_name = models.CharField(max_length=100, help_text="Name of the customer")
-    phone_number = models.CharField(max_length=15, help_text="Customer's phone number")
-    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Amount paid for the service")
-    payment_date = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.service_name} - {self.customer_name}"
-
-
-
-# Service Model for defining different types of services
+# =====================================
+# SERVICE DEFINITION MODEL
+# =====================================
 class Service(models.Model):
     SERVICE_TYPES = [
         ('airtime', 'Airtime Recharge'),
@@ -24,6 +12,8 @@ class Service(models.Model):
         ('electricity', 'Electricity Bill'),
         ('cable_tv', 'Cable TV Bill'),
         ('flight', 'Flight Booking'),
+        ('fees', 'School Fees'),
+        ('waecresultcheck', 'WAEC Result Check'),
     ]
     name = models.CharField(max_length=50)
     service_type = models.CharField(max_length=20, choices=SERVICE_TYPES)
@@ -31,132 +21,81 @@ class Service(models.Model):
     def __str__(self):
         return self.name
 
-# Airtime Recharge Model
+
+# =====================================
+# BASE PAYMENT CHOICE
+# =====================================
+PAYMENT_METHOD_CHOICES = [
+    ('credit_card', 'Credit Card'),
+    ('bank_transfer', 'Bank Transfer'),
+    ('wallet_balance', 'Wallet Balance'),
+]
+
+
+# =====================================
+# AIRTIME RECHARGE
+# =====================================
+# Define Network Providers
+NETWORK_PROVIDERS = (
+    ('MTN', 'MTN'),
+    ('Airtel', 'Airtel'),
+    ('Glo', 'Glo'),
+    ('9Mobile', '9Mobile'),
+)
+
+# =====================================
+# Airtime Recharge
+# =====================================
 class AirtimeRecharge(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='airtime_recharges')
-    network_provider = models.CharField(max_length=20)
+    network_provider = models.CharField(max_length=20, choices=NETWORK_PROVIDERS)
     phone_number = models.CharField(max_length=15)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_method = models.CharField(max_length=20, choices=[('wallet', 'Wallet'), ('debit_card', 'Debit Card')])
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
     date_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.network_provider} - {self.amount}"
 
-# Utility Bill Model
-class UtilityBill(models.Model):
+
+# =====================================
+# DATA TOP-UP
+# =====================================
+class DataTopUp(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='data_topups'
+    )
+    network_provider = models.CharField(max_length=20, choices=NETWORK_PROVIDERS)
+    phone_number = models.CharField(max_length=15)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.network_provider} - {self.amount}"
+
+
+# =====================================
+# UTILITY BILLS (Generic)
+# =====================================
+class UtilityBills(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='utility_bills')
     service_type = models.CharField(max_length=20)
     account_number = models.CharField(max_length=50)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     cable_provider = models.CharField(max_length=20, blank=True, null=True)
-    payment_method = models.CharField(max_length=20, choices=[('wallet', 'Wallet'), ('debit_card', 'Debit Card')])
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
     date_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.service_type} - {self.amount}"
 
-# Flight Booking Model
-class FlightBooking(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='flight_bookings')
-    departure_city = models.CharField(max_length=100)
-    arrival_city = models.CharField(max_length=100)
-    departure_date = models.DateField()
-    return_date = models.DateField(blank=True, null=True)
-    number_of_passengers = models.IntegerField()
-    children = models.IntegerField(default=0)
-    infants = models.IntegerField(default=0)
-    contact_number = models.CharField(max_length=15)
-    payment_method = models.CharField(max_length=20, choices=[('wallet', 'Wallet'), ('debit_card', 'Debit Card')])
-    date_created = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.user.username} - {self.departure_city} to {self.arrival_city}"
-
-# Data Top-Up Model
-class DataTopUp(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='data_topups')
-    network_provider = models.CharField(max_length=20)
-    phone_number = models.CharField(max_length=15)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_method = models.CharField(max_length=20, choices=[('wallet', 'Wallet'), ('debit_card', 'Debit Card')])
-    date_created = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.user.username} - {self.network_provider} - {self.amount}"
-
-# School Fees Payment Model
-class SchoolFeesPayment(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    student_name = models.CharField(max_length=255)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_method = models.CharField(max_length=20, choices=[('wallet', 'Wallet'), ('debit_card', 'Debit Card')])
-    date_created = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"School Fees Payment {self.id} by {self.user.username} for {self.student_name}"
-
-
-# Loan Application Model
-class LoanApplication(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    term = models.IntegerField()  # Loan term in months
-    purpose = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Loan Application {self.id} by {self.user.username}"
-
-from django.db import models
-from django.contrib.auth.models import User
-
-class DataTopUp(models.Model):
-    NETWORK_CHOICES = [
-        ('mtn', 'MTN'),
-        ('airtel', 'Airtel'),
-        ('glo', 'Glo'),
-        ('nine-mobile', '9Mobile'),
-    ]
-
-    CATEGORY_CHOICES = [
-        ('hot', 'Hot'),
-        ('daily', 'Daily'),
-        ('weekly', 'Weekly'),
-        ('monthly', 'Monthly'),
-        ('3 months+', '3 Months+'),
-        ('social', 'Social'),
-        ('router', 'Router'),
-        ('mifi', 'MiFi'),
-        ('others', 'Others'),
-    ]
-
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    phone_number = models.CharField(max_length=11)
-    network = models.CharField(choices=NETWORK_CHOICES, max_length=20)
-    category = models.CharField(choices=CATEGORY_CHOICES, max_length=20)
-    bundle = models.CharField(max_length=255)
-    transaction_status = models.CharField(max_length=50, default='pending')  # pending, completed, failed
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.bundle} on {self.network} for {self.phone_number}"
-
-# Airline Booking Model
-class AirlineBooking(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    departure_location = models.CharField(max_length=100)
-    destination = models.CharField(max_length=100)
-    departure_date = models.DateField()
-    return_date = models.DateField(null=True, blank=True)
-    number_of_passengers = models.IntegerField()
-    contact_number = models.CharField(max_length=15)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Airline Booking {self.id} by {self.user.username}"
-
-# Electricity Payment Model
+# =====================================
+# ELECTRICITY PAYMENT
+# =====================================
 class ElectricityPayment(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     meter_type = models.CharField(max_length=20)
@@ -168,134 +107,117 @@ class ElectricityPayment(models.Model):
     def __str__(self):
         return f"Electricity Payment {self.id} by {self.user.username}"
 
-# Dstv Subscription Model
+
+# =====================================
+# CABLE TV SUBSCRIPTIONS
+# =====================================
+from django.db import models
+from django.contrib.auth.models import User
+
 class DstvSubscription(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    customer_type = models.CharField(max_length=20)
-    smart_card_number = models.CharField(max_length=30)
-    package = models.CharField(max_length=100)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"DSTV Subscription {self.id} by {self.user.username}"
-
-# GoTV Subscription Model
-class GoTVSubscription(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    customer_type = models.CharField(max_length=20)
-    smart_card_number = models.CharField(max_length=30)
-    package = models.CharField(max_length=100)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"GoTV Subscription {self.id} by {self.user.username}"
-
-# StarTimes Subscription Model
-class StarTimesSubscription(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    customer_type = models.CharField(max_length=20)
-    smart_card_number = models.CharField(max_length=30)
-    package = models.CharField(max_length=100)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"StarTimes Subscription {self.id} by {self.user.username}"
-
-
-from django.db import models
-from django.conf import settings
-
-
-class Wallet(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Wallet({self.user.username})"  # Ensure it returns a recognizable but safe format
-
-from django.db import models
-from django.urls import reverse
-from django.utils.text import slugify
-
-class Service(models.Model):
-    SERVICE_CATEGORIES = [
-        ('manage_fund', 'Manage Fund'),
-        ('airtime_data', 'Airtime & Data'),
-        ('utility_bill', 'Utility Bill'),
-        ('school_fees', 'School Fees'),
-        ('flight_booking', 'Flight Booking'),
+    CUSTOMER_TYPES = [
+        ('residential', 'Residential'),
+        ('commercial', 'Commercial'),
     ]
 
-    name = models.CharField(max_length=50, unique=True, verbose_name="Service Name")
-    category = models.CharField(max_length=20, choices=SERVICE_CATEGORIES, verbose_name="Category")
-    slug = models.SlugField(unique=True, blank=True, verbose_name="Slug")  # Still auto-generated but optional
-    service_url = models.URLField(blank=True, null=True, verbose_name="Service URL")  
+    DSTV_PACKAGES = [
+        ('premium', 'Premium - ₦10,000'),
+        ('compact_plus', 'Compact Plus - ₦7,500'),
+        ('compact', 'Compact - ₦5,000'),
+        ('comfam', 'Confam - ₦3,800'),
+        ('yanga', 'Yanga - ₦2,500'),
+        ('padi', 'Padi - ₦1,800'),
+    ]
 
-    def save(self, *args, **kwargs):
-        """ Auto-generate a unique slug if not provided """
-        if not self.slug:
-            base_slug = slugify(self.name)
-            slug = base_slug
-            counter = 1
-            while Service.objects.filter(slug=slug).exists():
-                slug = f"{base_slug}-{counter}"
-                counter += 1
-            self.slug = slug
-
-        super().save(*args, **kwargs)
-
-    def get_absolute_url(self):
-        """ Return service URL if provided, otherwise detail page using ID """
-        if self.service_url:
-            return self.service_url
-        return reverse("services:service_detail", kwargs={"id": self.id})  # Uses ID instead of slug
-
-    def __str__(self):
-        return self.name
-
-
-
-# Airtime & Data Recharge Model
-class AirtimeRecharge(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='airtime_recharges')
-    network_provider = models.CharField(max_length=20)
-    phone_number = models.CharField(max_length=15)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    customer_type = models.CharField(max_length=20, choices=CUSTOMER_TYPES)
+    smart_card_number = models.CharField(max_length=30)
+    package = models.CharField(max_length=20, choices=DSTV_PACKAGES)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_method = models.CharField(max_length=20, choices=[('wallet', 'Wallet'), ('debit_card', 'Debit Card')])
-    date_created = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.network_provider} - {self.amount}"
+        return f"{self.user.username} - DSTV - {self.package}"
 
-# Utility Bill Model
-class UtilityBill(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='utility_bills')
-    service_type = models.CharField(max_length=20)
-    account_number = models.CharField(max_length=50)
+
+class GoTVSubscription(models.Model):
+    CUSTOMER_TYPES = DstvSubscription.CUSTOMER_TYPES
+
+    GOTV_PACKAGES = [
+        ('supa_plus', 'Supa+ - ₦5,500'),
+        ('supa', 'Supa - ₦4,500'),
+        ('max', 'Max - ₦3,200'),
+        ('jolli', 'Jolli - ₦2,460'),
+        ('jinja', 'Jinja - ₦1,640'),
+        ('smallie', 'Smallie - ₦800'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    customer_type = models.CharField(max_length=20, choices=CUSTOMER_TYPES)
+    smart_card_number = models.CharField(max_length=30)
+    package = models.CharField(max_length=20, choices=GOTV_PACKAGES)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    cable_provider = models.CharField(max_length=20, blank=True, null=True)
-    payment_method = models.CharField(max_length=20, choices=[('wallet', 'Wallet'), ('debit_card', 'Debit Card')])
-    date_created = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.service_type} - {self.amount}"
+        return f"{self.user.username} - GoTV - {self.package}"
 
-# School Fees Payment Model
+
+class StarTimesSubscription(models.Model):
+    CUSTOMER_TYPES = DstvSubscription.CUSTOMER_TYPES
+
+    STARTIMES_PACKAGES = [
+        ('nova_dish', 'Nova (dish) - ₦1,700'),
+        ('nova_antenna', 'Nova (antenna) - ₦1,300'),
+        ('basic', 'Basic - ₦2,500'),
+        ('smart', 'Smart - ₦3,200'),
+        ('classic', 'Classic - ₦4,500'),
+        ('super', 'Super - ₦6,200'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    customer_type = models.CharField(max_length=20, choices=CUSTOMER_TYPES)
+    smart_card_number = models.CharField(max_length=30)
+    package = models.CharField(max_length=30, choices=STARTIMES_PACKAGES)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - StarTimes - {self.package}"
+
+
+# =====================================
+# SCHOOL FEES PAYMENT
+# =====================================
 class SchoolFeesPayment(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     student_name = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_method = models.CharField(max_length=20, choices=[('wallet', 'Wallet'), ('debit_card', 'Debit Card')])
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
     date_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"School Fees Payment {self.id} by {self.user.username} for {self.student_name}"
 
-# Flight Booking Model
+
+# =====================================
+# WAEC RESULT CHECK
+# =====================================
+class WaecResultCheck(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    exam_number = models.CharField(max_length=20)
+    exam_year = models.CharField(max_length=4)
+    token_used = models.BooleanField(default=False)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"WAEC Result Check for {self.exam_number} by {self.user.username}"
+
+
+# =====================================
+# FLIGHT / AIRLINE BOOKINGS
+# =====================================
 class FlightBooking(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='flight_bookings')
     departure_city = models.CharField(max_length=100)
@@ -303,10 +225,53 @@ class FlightBooking(models.Model):
     departure_date = models.DateField()
     return_date = models.DateField(blank=True, null=True)
     number_of_passengers = models.IntegerField()
+    children = models.IntegerField(default=0)
+    infants = models.IntegerField(default=0)
     contact_number = models.CharField(max_length=15)
-    payment_method = models.CharField(max_length=20, choices=[('wallet', 'Wallet'), ('debit_card', 'Debit Card')])
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
     date_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.departure_city} to {self.arrival_city}"
 
+
+# =====================================
+# PAYSTACK TRANSACTION (FOR CARD PAYMENTS)
+# =====================================
+class PaystackTransaction(models.Model):
+    reference = models.CharField(max_length=100)
+    status = models.CharField(max_length=50)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Paystack Transaction {self.reference} - {self.status}"
+
+
+# =====================================
+# LOAN APPLICATION
+# =====================================
+class LoanApplication(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    term = models.IntegerField(help_text="Loan term in months")
+    purpose = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Loan Application {self.id} by {self.user.username}"
+    
+
+class ServicePayment(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='service_payment')
+    service_name = models.CharField(max_length=100)
+    customer_name = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=15)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_reference = models.CharField(max_length=100, blank=True, null=True)
+    payment_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.service_name} - {self.amount}"

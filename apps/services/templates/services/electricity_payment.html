@@ -1,175 +1,219 @@
 {% extends 'base.html' %}
-
-{% block content %}
 {% load static %}
-<div class="main-container">
-    <div class="right-panel">
-        <h1>Pay Electricity Bill</h1>
-        <form method="post" class="form-container">
+{% block content %}
+
+<body>
+    <!-- Go Back Button -->
+    <a href="javascript:history.back()" class="go-back-btn">← Go Back</a>
+
+<div class="electricity-container">
+    <div class="form-card">
+        <h2>🔌 Electricity Bill Payment</h2>
+        <p class="form-subtitle">Fill in your details to proceed with payment</p>
+
+        <form method="post" action="{% url 'services:electricity_payment' %}">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Pay</button>
+
+            <div class="form-group">
+                <label for="provider">Electricity Provider</label>
+                <select id="provider" name="provider" required>
+                    <option value="" disabled selected>Select a provider</option>
+                    <optgroup label="South West">
+                        <option value="ikeja-electric">Ikeja Electric</option>
+                        <option value="eko-electric">Eko Electric</option>
+                    </optgroup>
+                    <optgroup label="North">
+                        <option value="kaduna-electric">Kaduna Electric</option>
+                        <option value="kano-electric">Kano Electric</option>
+                        <option value="jos-electric">Jos Electric</option>
+                    </optgroup>
+                    <optgroup label="South South">
+                        <option value="portharcourt-electric">Port Harcourt Electric</option>
+                        <option value="benin-electric">Benin Electric</option>
+                    </optgroup>
+                    <optgroup label="South East">
+                        <option value="enugu-electric">Enugu Electric</option>
+                    </optgroup>
+                    <optgroup label="North Central">
+                        <option value="abuja-electric">Abuja Electric</option>
+                    </optgroup>
+                    <optgroup label="South East / South South">
+                        <option value="eko-electric-prepaid">Eko Electric (Prepaid)</option>
+                        <option value="ikeja-electric-prepaid">Ikeja Electric (Prepaid)</option>
+                    </optgroup>
+                    <optgroup label="Others">
+                        <option value="oyo-electric">Ibadan Electric</option>
+                        <option value="yola-electric">Yola Electric</option>
+                    </optgroup>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="account_number">Meter Number / Account Number</label>
+                <input type="text" id="account_number" name="account_number" placeholder="Enter meter/account number" required>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Amount (₦)</label>
+                <input type="number" id="amount" name="amount" placeholder="Enter amount" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+            </div>
+
+            <button type="submit" class="submit-btn">Pay Now</button>
         </form>
+
+        <div class="back-link">
+            <a href="{% url 'accounts:index' %}">← Back to Dashboard</a>
+        </div>
     </div>
 </div>
 
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: linear-gradient(to bottom right, #0d47a1, #1976d2);
-        margin: 0;
-        padding: 20px;
-        color: white;
-    }
-
-    .main-container {
-        margin: 20px auto;
-        padding: 20px;
-        max-width: 600px;
-        background: #fff;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-    }
-
-    .right-panel {
-        flex: 1;
-        background: rgba(255, 255, 255, 0);
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 30px rgba(255, 255, 255, 0.3);
-        margin-left: 20px; /* Add margin to distance from the left panel */
-    }
-
-    .form-container {
-        max-width: 400px; /* Reduce the width of the form */
-        margin: auto;
-    }
-
-    h1 {
-        text-align: center;
-        color: #041a7c;
-        margin-bottom: 20px;
-        text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 4px 6px rgba(0, 0, 0, 0.4);
-    }
-
-    .form-section {
-        margin-bottom: 30px;
-        padding: 20px;
-        border: 1px solid rgba(255, 255, 255, 0);
-        border-radius: 8px;
-        background: rgba(2, 20, 122, 0.95);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    .recharge-categories {
+    .electricity-container {
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+        background: linear-gradient(to right, #1c1c2b, #162b50, #1a3c6b);
     }
 
-    .recharge-categories label {
-        flex: 1 1 45%; /* Adjust the width of each category */
-        background: rgba(255, 255, 255, 0);
-        padding: 10px;
-        border-radius: 4px;
+    .form-card {
+        background: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 35px 30px;
+        max-width: 450px;
+        width: 100%;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        color: #fff;
+    }
+
+    h2 {
         text-align: center;
-        cursor: pointer;
-        transition: background-color 0.3s;
+        font-size: 1.8rem;
+        margin-bottom: 10px;
     }
 
-    .recharge-categories input[type="radio"] {
-        display: none;
+    .form-subtitle {
+        text-align: center;
+        font-size: 0.95rem;
+        margin-bottom: 25px;
+        color: #ccc;
     }
 
-    .recharge-categories input[type="radio"]:checked + label {
-        background-color: #1976d2;
-        color: white;
+    .form-group {
+        margin-bottom: 20px;
     }
 
     label {
         display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-        color: #fff;
+        margin-bottom: 6px;
+        font-weight: 600;
     }
 
     input, select {
-        width: calc(100% - 20px);
-        padding: 10px;
-        margin-bottom: 15px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        transition: border-color 0.3s, box-shadow 0.3s;
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background-color: rgba(255, 255, 255, 0.2);
+        color: #000000;
+        font-size: 1rem;
+        outline: none;
+        transition: background 0.3s ease;
+    }
+
+    input::placeholder {
+        color: #ccc;
     }
 
     input:focus, select:focus {
-        border-color: #1976d2;
-        box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+        background-color: rgba(255, 255, 255, 0.3);
     }
 
-    button {
-        background-color: #110272;
-        color: white;
-        padding: 10px 15px;
+    .submit-btn {
+        width: 100%;
+        padding: 14px;
+        background-color: #1a237e;
         border: none;
-        border-radius: 4px;
-        cursor: pointer;
+        border-radius: 8px;
+        font-size: 1rem;
         font-weight: bold;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        transition: transform 0.3s, box-shadow 0.3s;
+        color: #fff;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.2s ease;
     }
 
-    button:hover {
-        background-color: #021964;
+    .submit-btn:hover {
+        background-color: #0d47a1;
         transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
     }
 
-    .footer-container {
-    background-color: hsl(20, 65%, 86%);
-    color: #ffffff;
+    .back-link {
     text-align: center;
-    padding: 20px;
-    border-top: 4px solid #ffffff;
-    height: 100px; /* Set height to make it square */
+    margin-bottom: 2rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.footer-links {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-.footer-links a {
-    color: #00aaff;
+.back-link a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     text-decoration: none;
-    font-weight: bold;
-    transition: color 0.3s ease;
-}
-
-.footer-links a:hover {
     color: #ffffff;
+    background-color: #2563eb;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.07);
+    transform: translateY(0);
+    cursor: pointer;
 }
 
-.footer-social {
-    margin-bottom: 15px;
-}
-
-.footer-social a img {
-    width: 30px;
-    height: 30px;
-    margin: 0 10px;
+.back-link a::before {
+    content: '←';
+    font-size: 18px;
+    color: inherit;
     transition: transform 0.3s ease;
 }
 
-.footer-social a img:hover {
-    transform: scale(1.2);
+.back-link a:hover {
+    background-color: #1e40af;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-6px);
 }
 
-.footer-bottom {
-    font-size: 14px;
+.back-link a:active {
+    background-color: #1e3a8a;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(2px);
 }
+
+.back-link a:hover::before {
+    transform: translateX(-4px);
+}
+
+.go-back-btn {
+        display: inline-block;
+        background-color: #007bff;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        text-decoration: none;
+        margin: 1rem;
+        transition: background 0.3s ease;
+    }
+
+    .go-back-btn:hover {
+        background-color: #0056b3;
+    }
 </style>
 
 {% endblock %}

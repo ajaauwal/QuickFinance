@@ -34,8 +34,8 @@ import requests
 from django.conf import settings
 from .models import Wallet, Transaction, ServiceType, Bank, Payment, TransferRecipient, Transfer
 from apps.services.models import Service
-from apps.services.paystack import PaystackAPI
-from apps.services.paystack import PaystackAPI
+from apps.services.integrations.paystack import PaystackAPI
+from apps.services.integrations.paystack import PaystackAPI
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from .forms import PayWithDebitCardForm
@@ -195,36 +195,60 @@ def create_transaction_view(request):
     return render(request, 'transactions/create_transaction.html', {'form': form})
 
 
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import Wallet, Transaction
+
 @login_required
 def transaction_history(request):
     """View to display the user's transaction history."""
     try:
-        # Fetch the wallet and transactions for the user
+        # Fetch the wallet for the user
         wallet = get_object_or_404(Wallet, user=request.user)
-        transactions = Transaction.objects.filter(wallet=wallet).order_by('-date')
+
+        # Fetch transactions linked to the user's wallet and order by date
+        transactions = Transaction.objects.filter(wallet=wallet).order_by('-created_at')
+
+        # Fetch recent transactions (limit to 5)
+        recent_transactions = transactions[:5]
+
+        # Fetch older transactions (all transactions after the first 5)
+        older_transactions = transactions[5:]
+
+        # Handle empty transactions case
+        if not transactions:
+            messages.info(request, "No transactions found for your wallet.")
+        
     except Wallet.DoesNotExist:
         wallet = None
-        transactions = []
+        recent_transactions = []
+        older_transactions = []
         messages.error(request, "Wallet not found for the current user.")
     except Exception as e:
-        transactions = []
+        wallet = None
+        recent_transactions = []
+        older_transactions = []
         messages.error(request, f"Error fetching transactions: {str(e)}")
 
     # Context for the template
     context = {
         'wallet': wallet,
         'wallet_currencies': [
-            {"currency": "NGN", "symbol": "₦", "balance": wallet.balance if wallet else 0}
+            {
+                "currency": "NGN", 
+                "symbol": "₦", 
+                "balance": wallet.balance if wallet else 0
+            }
         ] if wallet else [],
-        'transactions': transactions,
+        'recent_transactions': recent_transactions,
+        'older_transactions': older_transactions,
     }
 
     return render(request, 'transactions/transaction_history.html', context)
 
 
 
-# Ensure the model is set before use
-TransactionForm.set_model()
 
 @login_required
 def transaction_view(request):
@@ -377,10 +401,6 @@ def pay_with_debit_card(request):
     return render(request, 'transactions/pay_with_debit_card.html', {'form': form})
 
 
-
-
-
-
 class ProfileView(LoginRequiredMixin, View):
     """View for viewing and updating the user's profile."""
 
@@ -453,49 +473,6 @@ class UpdateProfileView(APIView):
 
 
 
-
-
-@login_required
-def update_profile(request):
-    """View for updating the user's profile."""
-    if request.method == 'POST':
-        form = ProfileForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Your profile has been updated successfully.')
-            return redirect('profile')  # Adjust the URL name as per your app's URLs
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = ProfileForm(instance=request.user)
-    return render(request, 'transactions/update_profile.html', {'form': form})
-
-
-
-def update_user_wallet_balance(wallet, amount, transaction_type):
-    """
-    Updates the wallet balance based on the transaction type (credit or debit).
-    """
-    # Ensure the wallet exists for the user
-    if wallet is None:
-        raise ValueError("Wallet does not exist for the user.")
-    
-    # Convert amount to Decimal if it's a float
-    amount = Decimal(amount)  # This ensures that amount is always a Decimal
-
-    if transaction_type == 'credit':
-        wallet.balance += amount
-    elif transaction_type == 'debit':
-        if wallet.balance >= amount:
-            wallet.balance -= amount
-        else:
-            raise ValueError("Insufficient funds for debit transaction.")
-    else:
-        raise ValueError("Invalid transaction type specified.")
-    
-    wallet.save()
-
-
 @login_required
 def get_wallet_balance(request):
     """View for getting the user's wallet balance."""
@@ -530,118 +507,96 @@ def process_wallet_payment(request):
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
-import os
-import requests
-import logging
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
-
-logger = logging.getLogger(__name__)
-
 @login_required
-def pay_with_debit_card(request):
+def process_debit_card_payment(request):
     """View for processing payments using a debit card."""
     if request.method == 'POST':
-        try:
-            amount = float(request.POST.get('amount', 0))
-            card_number = request.POST.get('card_number')
-            expiry_date = request.POST.get('expiry_date')
-            cvc = request.POST.get('cvc')
+        amount = float(request.POST.get('amount'))
+        card_number = request.POST.get('card_number')
+        expiry_date = request.POST.get('expiry_date')
+        cvc = request.POST.get('cvc')
 
-            if not all([amount, card_number, expiry_date, cvc]):
-                messages.error(request, "All fields are required.")
-                return redirect('transactions:debit_card_payment')
+        # You'd send this data to Paystack for processing
+        payload = {
+            'amount': int(amount * 100),  # Paystack expects amount in kobo
+            'currency': 'NGN',
+            'card_number': card_number,
+            'expiry_date': expiry_date,
+            'cvc': cvc,
+        }
 
-            payload = {
-                'amount': int(amount * 100),  # Convert to kobo
-                'currency': 'NGN',
-                'card_number': card_number,
-                'expiry_date': expiry_date,
-                'cvc': cvc,
-            }
+        # Ensure Paystack secret key is loaded from .env
+        paystack_secret_key = os.getenv('PAYSTACK_SECRET_KEY')
 
-            paystack_secret_key = os.getenv('PAYSTACK_SECRET_KEY')
-            if not paystack_secret_key:
-                logger.error("Paystack secret key not found.")
-                messages.error(request, "Payment processing error. Please try again later.")
-                return redirect('transactions:debit_card_payment')
+        response = requests.post(
+            'https://api.paystack.co/charge',
+            headers={'Authorization': f'Bearer {paystack_secret_key}'}, 
+            data=payload
+        )
 
-            response = requests.post(
-                'https://api.paystack.co/charge',
-                headers={'Authorization': f'Bearer {paystack_secret_key}'},
-                json=payload  # Use json instead of data for proper API request
-            )
+        if response.status_code == 200:
+            # Handle successful payment response
+            payment_data = response.json()
+            # Update transaction, wallet, and other business logic
 
-            if response.status_code == 200:
-                payment_data = response.json()
-                # Handle transaction update logic here
-                messages.success(request, "Payment successful!")
-                return redirect('transactions:payment_success')
-            else:
-                logger.error(f"Payment failed: {response.text}")
-                messages.error(request, "Payment failed. Please try again.")
-                return redirect('transactions:payment_failed')
+            return redirect('transactions:payment_success')
 
-        except Exception as e:
-            logger.exception("Error processing debit card payment")
-            messages.error(request, "An error occurred. Please try again later.")
-            return redirect('transactions:debit_card_payment')
+        else:
+            # Handle failed payment
+            return redirect('transactions:payment_failed')
 
     return render(request, 'transactions/pay_with_debit_card.html')
 
 
+from decimal import Decimal
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Wallet, Transaction
+from .forms import AddMoneyForm
+from .utils import update_user_wallet_balance  # Ensure this is correctly implemented as shown below
 
 @login_required
 def add_money(request):
     """View for adding money to the user's wallet."""
+
+    wallet, created = Wallet.objects.get_or_create(user=request.user)
+
     if request.method == 'POST':
         form = AddMoneyForm(request.POST)
         if form.is_valid():
-            amount = form.cleaned_data['amount']
-            wallet = get_object_or_404(Wallet, user=request.user)
+            amount = Decimal(form.cleaned_data['amount'])
 
-            # Ensure amount is a Decimal
-            amount = Decimal(amount)
-
-            # Ensure wallet exists
-            if wallet:
-                wallet.balance += amount
-                wallet.save()
-
+            if amount <= 0:
+                messages.error(request, "Enter a valid amount.")
+            else:
                 # Create a transaction record
-                Transaction.objects.create(
+                transaction = Transaction.objects.create(
                     user=request.user,
                     wallet=wallet,
                     amount=amount,
-                    status='COMPLETED',  # Assuming 'status' is the field indicating transaction status
-                    transaction_id=f'transaction_{wallet.user.id}_{wallet.balance}_{amount}'  # Unique transaction ID
+                    status='completed',
+                    transaction_id=f'TXN_{request.user.id}_{wallet.id}_{int(wallet.balance * 100)}'
                 )
 
-                messages.success(request, 'Money added to wallet successfully.')
-                return redirect('transactions:success_page')  # Adjust the URL name as per your app's URLs
-            else:
-                messages.error(request, 'Wallet not found.')
+                # ✅ Update wallet balance
+                update_user_wallet_balance(wallet, amount, 'credit')
+
+                messages.success(request, f"₦{amount} deposited successfully.")
+                return redirect('transactions:add_money')  # Redirect to avoid re-submission
         else:
             messages.error(request, 'Please correct the errors below.')
-
     else:
         form = AddMoneyForm()
 
-    # Fetch the wallet and transactions for the context
-    wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None
-    transactions = Transaction.objects.filter(wallet=wallet) if wallet else []
+    transactions = Transaction.objects.filter(wallet=wallet).order_by('-created_at')[:10]
 
     context = {
         'form': form,
         'wallet': wallet,
         'wallet_currencies': [
-            {"currency": "NGN", "symbol": "₦", "balance": wallet.balance if wallet else 0}
-        ] if wallet else [],
+            {"currency": "NGN", "symbol": "₦", "balance": wallet.balance}
+        ],
         'transactions': transactions,
     }
 
@@ -666,7 +621,6 @@ def success_page(request):
     return render(request, 'transactions/success_page.html', context)
 
 
-
 @login_required
 def wallet_balance(request):
     """
@@ -674,7 +628,7 @@ def wallet_balance(request):
     """
     wallet = Wallet.objects.filter(user=request.user).first()
     balance = wallet.balance if wallet else 0
-    transactions = Transaction.objects.filter(user=request.user)  # Added this to fetch transactions for the user
+    transactions = Transaction.objects.filter(wallet=wallet)  # Fetch transactions based on wallet, not user directly
 
     context = {
         'wallet': wallet,
@@ -763,7 +717,7 @@ def transfer(request):
                 form.add_error('amount', 'Insufficient balance for this transfer.')
 
             if form.errors:
-                return render(request, 'transfer_view.html', {'form': form})
+                return render(request, 'transactions/transfer.html', {'form': form})
 
             # Create the transfer transaction for the sender
             if confirm_transfer:
@@ -832,12 +786,11 @@ def transfer(request):
     return render(request, 'transactions/transfer.html', context)
 
 
-
 @login_required
 def transfer_success(request):
     wallet = Wallet.objects.filter(user=request.user).first()
     balance = wallet.balance if wallet else 0
-    transactions = Transaction.objects.filter(user=request.user)  # Added this to fetch transactions for the user
+    transactions = Transaction.objects.filter(wallet=wallet)  # Use wallet for transaction filtering
 
     context = {
         'wallet': wallet,
@@ -846,13 +799,9 @@ def transfer_success(request):
         ],
         'transactions': transactions,
     }
-    return render(request, 'transactions/transfer_success.html')
+    return render(request, 'transactions/transfer_success.html', context)
 
 
-
-
-
-# Wallet View for web requests
 class WalletView(LoginRequiredMixin, View):
     """Class-based view for fetching wallet and transaction data and handling balance updates."""
 
@@ -887,9 +836,10 @@ class WalletView(LoginRequiredMixin, View):
     def post(self, request):
         """Handle transactions to debit or credit the user's wallet."""
         try:
-            amount = float(request.POST.get('amount'))
-            transaction_type = request.POST.get('type')  # 'credit' or 'debit'
-            description = request.POST.get('description')
+            data = json.loads(request.body)  # Assuming data is being sent as JSON
+            amount = float(data.get('amount'))
+            transaction_type = data.get('type')  # 'credit' or 'debit'
+            description = data.get('description')
 
             if amount is None or transaction_type not in ['credit', 'debit']:
                 return JsonResponse({'error': 'Invalid input data'}, status=400)
@@ -905,6 +855,7 @@ class WalletView(LoginRequiredMixin, View):
 
             wallet.save()
 
+            # Create a transaction entry
             Transaction.objects.create(
                 user=request.user,
                 amount=amount,
@@ -914,23 +865,36 @@ class WalletView(LoginRequiredMixin, View):
                 status='Completed'
             )
 
-            return JsonResponse({'message': 'Transaction successful', 'new_balance': wallet.balance})
+            return JsonResponse({'message': 'Transaction completed successfully'}, status=200)
 
-        except ValueError:
-            return JsonResponse({'error': 'Invalid amount format'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 
-# Wallet Balance View for API requests
-class WalletBalanceView(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        """Retrieve and return wallet balance for authenticated user"""
-        try:
-            wallet = Wallet.objects.get(user=request.user)
-            return Response({"balance": wallet.balance})
-        except Wallet.DoesNotExist:
-            return Response({"error": "Wallet not found"}, status=404)
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import Profile
+from .forms import ProfileForm
+
+@login_required
+def update_profile(request):
+    """View to update user's profile information."""
+    profile = get_object_or_404(Profile, user=request.user)  # Get the profile for the logged-in user
+    
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()  # Save the updated profile
+            messages.success(request, 'Your profile has been updated successfully.')
+            return redirect('profile')  # Redirect to the profile page (or another relevant page)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ProfileForm(instance=profile)
+    
+    return render(request, 'profile/update_profile.html', {'form': form})
 
 
 # Consolidated Wallet Transaction View for Web (Form-based)
@@ -942,6 +906,10 @@ def wallet_transaction_view(request):
         if form.is_valid():
             transaction_type = form.cleaned_data['transaction_type']
             amount = form.cleaned_data['amount']
+
+            if amount <= 0:
+                messages.error(request, 'Amount must be greater than zero.')
+                return redirect('transactions:wallet_transaction')
 
             if transaction_type == 'add':
                 wallet.balance += amount
@@ -962,45 +930,66 @@ def wallet_transaction_view(request):
     return render(request, 'transactions/wallet_transaction.html', {'form': form})
 
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from decimal import Decimal
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
 from django.utils import timezone
-from .models import Wallet, Transaction  # Ensure correct model imports
+from django.http import HttpResponse
+from .models import Wallet, Transaction
+from .forms import AddMoneyForm  # Make sure this form exists
 
 @login_required
 def manage_fund(request):
-    user = request.user
-    wallet, _ = Wallet.objects.get_or_create(user=user)
+    wallet, _ = Wallet.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
         action = request.POST.get('action')
-        amount = request.POST.get('amount')
+        amount_str = request.POST.get('amount')
 
-        try:
-            amount = int(amount)  # Convert amount to integer safely
-            if amount <= 0:
-                return HttpResponse("Invalid amount. Please enter a positive value.")
-        except (ValueError, TypeError):
+        # Validate amount
+        if not (amount_str and amount_str.isdigit()):
             return HttpResponse("Invalid amount. Please enter a numeric value.")
 
+        amount = Decimal(amount_str)
+
         if action == 'deposit':
-            wallet.balance += amount
-            wallet.save()
-            Transaction.objects.create(
-                wallet=wallet,
-                transaction_type='credit',
-                amount=amount,
-                description="Deposit to wallet",
-                timestamp=timezone.now(),
-                status='completed'
-            )
-            return redirect('fund_management_success')
+            form = AddMoneyForm(request.POST)
+            if form.is_valid():
+                amount = Decimal(form.cleaned_data['amount'])
+
+                wallet.balance += amount
+                wallet.save()
+
+                # Optional custom transaction ID
+                transaction_id = f'transaction_{wallet.user.id}_{wallet.balance}_{amount}'
+
+                # Create detailed transaction record
+                Transaction.objects.create(
+                    user=request.user,
+                    wallet=wallet,
+                    amount=amount,
+                    status='COMPLETED',
+                    transaction_id=transaction_id
+                )
+
+                # Also record deposit in a separate (standard) format
+                Transaction.objects.create(
+                    wallet=wallet,
+                    transaction_type='credit',
+                    amount=amount,
+                    description="Deposit to wallet",
+                    timestamp=timezone.now(),
+                    status='completed'
+                )
+                return redirect('fund_management_success')
+            else:
+                return HttpResponse("Form is invalid. Please correct the errors.")
 
         elif action == 'withdraw':
             if wallet.balance >= amount:
                 wallet.balance -= amount
                 wallet.save()
+
                 Transaction.objects.create(
                     wallet=wallet,
                     transaction_type='debit',
@@ -1011,21 +1000,14 @@ def manage_fund(request):
                 )
                 return redirect('fund_management_success')
             else:
-                return HttpResponse("Insufficient balance.")
+                return HttpResponse("Insufficient balance for withdrawal.")
 
-        return HttpResponse("Invalid action.")
+        else:
+            return HttpResponse("Invalid action selected.")
 
-    # Fetch wallet and transactions for authenticated users (GET request)
-    transactions = Transaction.objects.filter(wallet=wallet)
-
-    context = {
-        'wallet': wallet,
-        'wallet_currencies': [{"currency": "NGN", "symbol": "₦", "balance": wallet.balance}],
-        'transactions': transactions,
-    }
-
-    return render(request, 'transactions/manage_fund.html', context)
-
+    # For GET request, show the fund management form
+    form = AddMoneyForm()
+    return render(request, 'transactions/manage_fund.html', {'form': form, 'wallet': wallet})
 
 
 # Transfer Money View for Transferring Funds
@@ -1211,45 +1193,78 @@ class PaymentInitiateView(APIView):
             return Response({'error': 'An internal error occurred. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# Payment Callback from Paystack
 @login_required
-def payment_callback(request):
-    """Handles the payment callback from Paystack and updates the payment status accordingly."""
-    payment_reference = request.GET.get('reference')
+def transaction_form(request, bank_id):
+    """Handle the transaction form."""
+    # Fetch the selected bank using the bank_id passed in the URL
+    bank = get_object_or_404(UserBank, id=bank_id, user=request.user)
 
-    if not payment_reference:
-        messages.error(request, "Payment reference is missing.")
-        return redirect('payment_failed')
+    # Handle the transaction on POST request
+    if request.method == 'POST':
+        # Get the transaction amount entered by the user
+        try:
+            amount = Decimal(request.POST.get('amount'))  # Ensure the amount is a decimal number
+        except (ValueError, TypeError):
+            messages.error(request, "Invalid amount entered.")
+            return redirect('transactions:transaction_form', bank_id=bank.id)
 
-    url = f'https://api.paystack.co/transaction/verify/{payment_reference}'
-    headers = {'Authorization': f'Bearer {settings.PAYSTACK_SECRET_KEY}'}
+        # Check if the amount is valid
+        if amount <= 0:
+            messages.error(request, "Transaction amount must be greater than zero.")
+            return redirect('transactions:transaction_form', bank_id=bank.id)
 
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        response_data = response.json()
+        # Check if the user has sufficient funds
+        user_balance = bank.get_balance()
 
-        if response_data['status'] and response_data['data']['status'] == 'success':
-            payment = Payment.objects.get(reference=payment_reference)
-            payment.status = 'paid'
-            payment.save()
+        if amount > user_balance:
+            messages.error(request, "Insufficient funds for this transaction!")
+            return redirect('transactions:transaction_form', bank_id=bank.id)
 
-            wallet = payment.user.wallet
-            wallet.balance += response_data['data']['amount'] / 100
-            wallet.save()
+        # Create the transaction
+        transaction = Transaction.objects.create(
+            user=request.user,
+            bank=bank,
+            amount=amount,
+            status='pending'  # Assuming 'pending' is the initial status
+        )
 
-            messages.success(request, "Payment was successful!")
-            return redirect('payment_success')
+        # Optionally, you can update the bank balance if needed
+        bank.update_balance(-amount)  # Deduct the transaction amount from user's bank balance (you would need to implement this)
 
-        else:
-            messages.error(request, "Payment verification failed.")
-            return redirect('payment_failed')
+        # Optionally, send a notification or email about the transaction
+        messages.success(request, f"Transaction of {amount} initiated successfully.")
 
-    except requests.exceptions.RequestException as e:
-        messages.error(request, f"An error occurred while processing the payment: {e}")
-        return redirect('payment_failed')
+        # Redirect to transaction success page
+        return redirect('transactions:transaction_success', transaction_id=transaction.id)
+
+    return render(request, 'transactions/transaction_form.html', {'bank': bank})
 
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import UserBank, Transaction
+from decimal import Decimal
+
+@login_required
+def select_bank(request, bank_id):
+    """Handle the selection of a bank."""
+    # Fetch the bank based on the bank_id and user
+    bank = get_object_or_404(UserBank, id=bank_id, user=request.user)
+
+    # Optional: Logic to check if the user has sufficient funds for future transactions
+    user_balance = bank.get_balance()  # Assuming you have this method implemented
+
+    if user_balance <= 0:
+        messages.warning(request, "Your bank account does not have sufficient funds for transactions.")
+        return redirect('transactions:transaction_form', bank_id=bank.id)
+
+    # Store selected bank in session (optional)
+    request.session['selected_bank_id'] = bank.id
+
+    # Redirect to the transaction form with the bank info
+    messages.success(request, f"Bank {bank.bank_name} selected successfully.")
+    return redirect('transactions:transaction_form', bank_id=bank.id)
 
 @login_required
 def bank_selection_view(request):
@@ -1265,58 +1280,20 @@ def bank_selection_view(request):
     return render(request, 'transactions/bank_selection.html', context)
 
 
-
-@login_required
-def select_bank(request, bank_id):
-    """Handle the selection of a bank."""
-    # Fetch the bank based on the bank_id and user
-    bank = get_object_or_404(UserBank, id=bank_id, user=request.user)
-
-    # Optionally, you can add any logic here to check if the user has sufficient funds or is eligible for a transaction
-
-    # Example: Start a transaction or redirect to a form
-    # You could also store the selected bank in the session or the user's profile for future reference
-    request.session['selected_bank_id'] = bank.id  # Store selected bank in session (optional)
-
-    # Redirect to the transaction form with the bank info
-    messages.success(request, f"Bank {bank.bank_name} selected successfully.")  # Example of success message
-    return redirect('transactions:transaction_form', bank_id=bank.id)
-
-
-
 @login_required
 def process_bank_view(request, bank_id):
     """Process the bank selection and initiate a transaction."""
     bank = get_object_or_404(UserBank, id=bank_id, user=request.user)
 
-    # Add any necessary logic here (e.g., initiating a transaction, verifying the bank)
-    # For now, we'll just redirect to the transaction form or transaction processing view
+    # Add logic to verify user's bank and balance
+    user_balance = bank.get_balance()
+
+    if user_balance <= 0:
+        messages.warning(request, "Your bank account has insufficient funds for a transaction.")
+        return redirect('transactions:transaction_form', bank_id=bank.id)
+
+    # If balance is fine, proceed with the transaction form
     return redirect('transactions:transaction_form', bank_id=bank.id)
-
-
-@login_required
-def transaction_form(request, bank_id):
-    """Handle the transaction form."""
-    # Fetch the selected bank using the bank_id passed in the URL
-    bank = get_object_or_404(UserBank, id=bank_id, user=request.user)
-
-    # Handle any additional logic, such as creating a transaction
-    if request.method == 'POST':
-        # Logic for handling transaction (e.g., saving the transaction)
-        amount = request.POST.get('amount')  # Example, you can get other fields as well
-        transaction = Transaction.objects.create(
-            user=request.user,
-            bank=bank,
-            amount=amount,
-            status='pending'  # Example status, adjust as needed
-        )
-
-        # Optionally, redirect to a confirmation page
-        return redirect('transactions:transaction_success', transaction_id=transaction.id)
-
-    return render(request, 'transactions/transaction_form.html', {'bank': bank})
-
-
 
 def get_bank_code(bank_name):
     bank_mapping = {
@@ -1355,85 +1332,6 @@ def get_bank_code(bank_name):
     return bank_mapping.get(bank_name)
 
 
-# Wallet View for web requests
-class WalletView(LoginRequiredMixin, View):
-    """Class-based view for fetching wallet and transaction data and handling balance updates."""
-
-    def get(self, request):
-        """Fetch wallet and transaction data for the logged-in user."""
-        wallet = Wallet.objects.filter(user=request.user).first()
-        if not wallet:
-            return JsonResponse({'error': 'Wallet not found'}, status=404)
-
-        transactions = Transaction.objects.filter(user=request.user).order_by('-created_at')[:5]
-
-        wallet_data = {
-            'balance': wallet.balance,
-        }
-
-        transaction_data = [
-            {
-                'date': t.created_at,
-                'amount': t.amount,
-                'type': t.type,
-                'description': t.description,
-                'status': t.status,
-            }
-            for t in transactions
-        ]
-
-        return JsonResponse({
-            'wallet_data': wallet_data,
-            'transactions': transaction_data
-        })
-
-    def post(self, request):
-        """Handle transactions to debit or credit the user's wallet."""
-        try:
-            amount = float(request.POST.get('amount'))
-            transaction_type = request.POST.get('type')  # 'credit' or 'debit'
-            description = request.POST.get('description')
-
-            if amount is None or transaction_type not in ['credit', 'debit']:
-                return JsonResponse({'error': 'Invalid input data'}, status=400)
-
-            wallet = get_object_or_404(Wallet, user=request.user)
-
-            if transaction_type == 'credit':
-                wallet.balance += amount
-            elif transaction_type == 'debit':
-                if wallet.balance < amount:
-                    return JsonResponse({'error': 'Insufficient balance'}, status=400)
-                wallet.balance -= amount
-
-            wallet.save()
-
-            Transaction.objects.create(
-                user=request.user,
-                amount=amount,
-                type=transaction_type,
-                description=description,
-                created_at=timezone.now(),
-                status='Completed'
-            )
-
-            return JsonResponse({'message': 'Transaction successful', 'new_balance': wallet.balance})
-
-        except ValueError:
-            return JsonResponse({'error': 'Invalid amount format'}, status=400)
-
-
-# Wallet Balance View for API requests
-class WalletBalanceView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        """Retrieve and return wallet balance for authenticated user"""
-        try:
-            wallet = Wallet.objects.get(user=request.user)
-            return Response({"balance": wallet.balance})
-        except Wallet.DoesNotExist:
-            return Response({"error": "Wallet not found"}, status=404)
 
 
 # Consolidated Wallet Transaction View for Web (Form-based)
@@ -1463,8 +1361,6 @@ def wallet_transaction_view(request):
         form = WalletForm(initial={'wallet': wallet})
 
     return render(request, 'transactions/wallet_transaction.html', {'form': form})
-
-
 
 
 # Transfer Money View for Transferring Funds
@@ -1605,3 +1501,6 @@ def record_transaction(request):
         except ValueError:
             return JsonResponse({"error": "Invalid amount format."}, status=400)
     return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+

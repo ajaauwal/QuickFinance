@@ -1,25 +1,28 @@
-{% extends 'base.html' %}
-{% load static %}
+<!-- yourapp/templates/yourapp/search_results.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+</head>
+<body>
 
-{% block content %}
-    <div class="container mt-4">
-        <h2 class="mb-3">Search Results for "<span class="text-primary">{{ query }}</span>"</h2>
+    <h1>Search Results for "{{ query }}"</h1>
+    
+    {% if results %}
+        <ul>
+            {% for service in results %}
+                <li>
+                    <strong>{{ service.name }}</strong><br>
+                    <p>{{ service.description }}</p>
+                    <small>Category: {{ service.category }}</small>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No results found for "{{ query }}".</p>
+    {% endif %}
 
-        {% if results %}
-            <ul class="list-group">
-                {% for service in results %}
-                    <li class="list-group-item">
-                        <a href="{% url 'services:service_detail' service.slug %}" class="text-decoration-none">
-                            <strong>{{ service.name }}</strong>
-                        </a><br>
-                        <small class="text-muted">Category: {{ service.category }}</small>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <div class="alert alert-warning" role="alert">
-                No results found for "<strong>{{ query }}</strong>". Try searching for something else.
-            </div>
-        {% endif %}
-    </div>
-{% endblock %}
+</body>
+</html>

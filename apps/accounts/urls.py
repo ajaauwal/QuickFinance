@@ -1,30 +1,32 @@
-from django.urls import path, include
-from rest_framework.authtoken.views import obtain_auth_token
-from . import views
+from django.urls import path
+from .views import (
+    IndexView, CustomLoginView, CustomLogoutView, SignUpView,
+    CustomPasswordResetView, CustomPasswordResetDoneView,
+    CustomPasswordResetCompleteView, InitiatePasswordResetView,
+    invite_friends, help_support, LoginAjaxView, SocialDjangoView
+)
 
 app_name = 'accounts'
 
 urlpatterns = [
-    # Authentication URLs
-    path('login/', views.CustomLoginView.as_view(), name='login'),
-    path('logout/', views.CustomLogoutView.as_view(), name='logout'),
-    path('signup/', views.SignUpView.as_view(), name='signup'),
-        
-    # Password Reset URLs
-    path('password-reset/', views.CustomPasswordResetView.as_view(), name='password_reset'),
-    path('password-reset-done/', views.CustomPasswordResetDoneView.as_view(), name='password_reset_done'),
-    path('password-reset-complete/', views.CustomPasswordResetCompleteView.as_view(), name='password_reset_complete'),
+    path('', IndexView.as_view(), name='index'),
+    path('login/', CustomLoginView.as_view(), name='login'),
+    path('logout/', CustomLogoutView.as_view(), name='logout'),
+    path('signup/', SignUpView.as_view(), name='signup'),
     
-    # Other Views
-    path('help-support/', views.help_support, name='help_support'),
-    path('invite-friends/', views.invite_friends, name='invite_friends'),
+    # Password reset paths
+    path('password-reset/', InitiatePasswordResetView.as_view(), name='password_reset'),
+    path('password-reset/done/', CustomPasswordResetDoneView.as_view(), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', CustomPasswordResetView.as_view(), name='password_reset_confirm'),
+    path('reset/done/', CustomPasswordResetCompleteView.as_view(), name='password_reset_complete'),
 
-    # Index page (homepage) using the IndexView class
-    path('', views.IndexView.as_view(), name='index'),  # Corrected to use IndexView class
+    # Ajax login
+    path('ajax/login/', LoginAjaxView.as_view(), name='ajax_login'),
 
-    # API route for fetching wallet balance and token authentication
-    path('api/token/', obtain_auth_token, name='api-token'),  # Token authentication
-    path('accounts/', include('social_django.urls', namespace='social')),
+    # Social login
+    path('social/login/', SocialDjangoView.as_view(), name='social_login'),
 
-    
+    # Other features
+    path('invite/', invite_friends, name='invite_friends'),
+    path('help/', help_support, name='help_support'),
 ]

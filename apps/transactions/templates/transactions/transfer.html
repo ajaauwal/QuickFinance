@@ -4,8 +4,8 @@
 {% block content %}
 <title>Transfer Money</title>
 
-<div class="page-wrapper">
-    <div class="main-container">
+<div class="main-container">
+    <div class="right-panel">
         <h1>Transfer Money</h1>
 
         {% if insufficient_balance %}
@@ -14,187 +14,75 @@
 
         <form method="POST" action="{% url 'transactions:transfer' %}" class="withdraw-form" id="withdrawForm">
             {% csrf_token %}
-            <div class="form-section">
+            <div class="form-group">
                 <label for="amount">Amount:</label>
-                <input type="number" name="amount" id="amount" class="form-control" required placeholder="Enter amount">
+                <input type="number" name="amount" id="amount" required placeholder="Enter amount">
             </div>
 
-            <div class="form-section">
+            <div class="form-group">
                 <label for="account_number">Bank Account Number:</label>
-                <input type="text" name="account_number" id="account_number" class="form-control" required placeholder="Enter bank account number">
+                <input type="text" name="account_number" id="account_number" required placeholder="Enter bank account number">
             </div>
 
-            <div class="form-section">
+            <div class="form-group">
                 <label for="recipient">Recipient:</label>
-                <input type="text" name="recipient" id="recipient" class="form-control" required placeholder="Enter recipient name">
+                <input type="text" name="recipient" id="recipient" required placeholder="Enter recipient name">
             </div>
 
-            <div class="form-section">
+            <div class="form-group">
                 <label for="bank_name">Bank Name:</label>
                 <select name="bank_name" id="bank_name" class="form-control" required>
                     <option value="">Select a bank</option>
                     <option value="access">Access Bank</option>
                     <option value="fcmb">FCMB</option>
-                    <!-- Add all other bank options here -->
+                    <option value="zenith">Zenith Bank</option>
+                    <option value="gtb">Guaranty Trust Bank (GTBank)</option>
+                    <option value="uba">United Bank for Africa (UBA)</option>
+                    <option value="firstbank">First Bank of Nigeria</option>
+                    <option value="stanbic">Stanbic IBTC Bank</option>
+                    <option value="ecobank">Ecobank</option>
+                    <option value="wema">Wema Bank</option>
+                    <option value="fidelity">Fidelity Bank</option>
+                    <option value="polaris">Polaris Bank</option>
+                    <option value="keystone">Keystone Bank</option>
+                    <option value="union">Union Bank of Nigeria</option>
+                    <option value="unity">Unity Bank</option>
+                    <option value="sterling">Sterling Bank</option>
+                    <option value="jaiz">Jaiz Bank</option>
+                    <option value="suntrust">SunTrust Bank</option>
+                    <option value="rubies">Rubies Microfinance Bank</option>
+                    <option value="kuda">Kuda Microfinance Bank</option>
+                    <option value="vfd">VFD Microfinance Bank</option>
+                    <option value="taj">TAJ Bank</option>
+                    <option value="globus">Globus Bank</option>
+                    <option value="providus">Providus Bank</option>
+                    <option value="randmerchant">Rand Merchant Bank</option>
+                    <option value="standardchartered">Standard Chartered Bank</option>
+                    <option value="lotus">Lotus Bank</option>
+                    <option value="parallex">Parallex Bank</option>
+                    <option value="opay">Opay</option>
+                    <option value="palmpay">PalmPay</option>
+                    <option value="carbon">Carbon Bank</option>
+                    <option value="paycom">Paycom (OPay)</option>
+                    <option value="mint">Mint Bank</option>
+                    <option value="eyowo">Eyowo</option>
+                    <option value="moniepoint">Moniepoint Microfinance Bank</option>
                 </select>
             </div>
 
-            <div class="form-section">
+            <div class="form-group">
                 <label for="remark">Remark (Reason for Transfer):</label>
-                <textarea name="remark" id="remark" class="form-control" rows="4" placeholder="Enter reason for transfer" required></textarea>
+                <textarea name="remark" id="remark" rows="4" placeholder="Enter reason for transfer" required></textarea>
             </div>
 
-            <div class="button-container">
-                <button type="submit" class="btn" id="submitTransfer">
-                    <i class="fas fa-paper-plane"></i> Transfer
-                </button>
-            </div>
+            <button type="submit" id="submitTransfer">Transfer</button>
         </form>
-
-        <div class="spinner" id="loadingSpinner" style="display: none;">
-            <i class="fas fa-spinner fa-spin"></i> Processing...
-        </div>
     </div>
 </div>
 
-<style>
-    @keyframes fadeIn {
-        from { opacity: 0; transform: scale(0.98); }
-        to { opacity: 1; transform: scale(1); }
-    }
 
-    .page-wrapper {
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        animation: fadeIn 1s ease-in-out;
-        padding: 20px;
-    }
 
-    .main-container {
-        width: 90%;
-        max-width: 480px;
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(15px);
-        padding: 35px;
-        border-radius: 20px;
-        text-align: center;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        transition: all 0.3s ease;
-    }
-
-    .main-container:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
-    }
-
-    h1 {
-        font-size: 30px;
-        color: #ffffff;
-        margin-bottom: 30px;
-        font-weight: 700;
-        text-transform: uppercase;
-        text-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    h1 i {
-        margin-right: 10px;
-        color: #60a5fa;
-    }
-
-    .form-section {
-        margin-bottom: 20px;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 12px;
-        margin: 10px 0;
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 16px;
-        color: #333;
-        transition: border-color 0.3s ease;
-    }
-
-    .form-control:focus {
-        border-color: #3B82F6;
-        outline: none;
-    }
-
-    .button-container {
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-    }
-
-    .btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        width: 100%;
-        padding: 15px;
-        background: linear-gradient(135deg, #6366f1, #4338ca);
-        color: white;
-        font-size: 17px;
-        font-weight: 600;
-        text-decoration: none;
-        border-radius: 12px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .btn::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: rgba(255, 255, 255, 0.2);
-        transition: left 0.4s ease;
-    }
-
-    .btn:hover::before {
-        left: 100%;
-    }
-
-    .btn:hover {
-        background: linear-gradient(135deg, #4f46e5, #312e81);
-        transform: scale(1.07);
-        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
-    }
-
-    .btn i {
-        font-size: 18px;
-    }
-
-    .spinner {
-        text-align: center;
-        margin-top: 15px;
-        font-size: 18px;
-        color: #3B82F6;
-    }
-
-    @media (max-width: 600px) {
-        .main-container {
-            width: 100%;
-            padding: 25px;
-        }
-
-        .btn {
-            padding: 14px;
-            font-size: 16px;
-        }
-    }
-</style>
-
+<script src="https://js.paystack.co/v1/inline.js"></script>
 <script>
     document.getElementById('withdrawForm').addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -239,19 +127,233 @@
                 alert('Transfer successful!');
                 window.location.href = "/transactions/verify/" + data.reference + "/";
             } else {
-                let errorMessage = 'Transfer failed. Please try again later.';
-
-                if (data.error) {
-                    errorMessage = `Transfer failed: ${data.error.message || data.error}`;
-                }
-
-                alert(errorMessage);
+                alert('Transfer failed: ' + data.error);
             }
         } catch (error) {
             console.error('Error during transfer:', error);
             alert('An error occurred. Please try again later.');
         }
     });
+
+    function closeFundsTransferForm() {
+        const fundstransferContainer = document.querySelector('.fundstransfer-container');
+        const videoBackground = document.querySelector('.video-background');
+
+        if (fundstransferContainer) {
+            fundstransferContainer.style.display = 'none';
+        }
+
+        if (videoBackground) {
+            videoBackground.style.display = 'none';
+        }
+
+        history.back();
+    }
 </script>
+
+<style>
+    /* General Reset */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Body Styling */
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background-color: #f5f7fa; /* Light Grey Background */
+        overflow-x: hidden;
+        font-size: 16px;
+    }
+
+    /* Right Panel Styling */
+    .right-panel {
+        background-color: #fff;
+        color: #333;
+        max-width: 500px;
+        margin: 50px auto;
+        padding: 30px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+    }
+
+    .right-panel h1 {
+        text-align: center;
+        font-size: 2rem;
+        color: #006994;
+        margin-bottom: 30px;
+        font-weight: 600;
+    }
+/* Form Container Styling */
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Adds consistent spacing between sections */
+    padding: 20px; /* Adds internal spacing within the form */
+    background-color: #fff; /* Ensures form background is white */
+    border-radius: 12px; /* Softens the corners of the form container */
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow for depth */
+    max-width: 600px; /* Restricts the maximum width of the form */
+    margin: 0 auto; /* Centers the form on the page */
+}
+
+/* Form Section Styling */
+.form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Adds consistent spacing between label, input, and helper text */
+    margin-bottom: 24px; /* Adds extra spacing below each section */
+}
+
+label {
+    font-size: 1.1em; /* Increases label font size for better readability */
+    color: #333; /* Ensures the label has enough contrast */
+    font-weight: 500; /* Makes the label text slightly bold */
+    transition: color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+label:hover {
+    color: #0288d1; /* Changes label color on hover for a dynamic feel */
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 15px; /* Spacing below inputs for visual clarity */
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    font-size: 1em;
+    transition: border 0.3s ease, background-color 0.3s ease; /* Smooth transitions */
+}
+
+input:focus, select:focus, textarea:focus {
+    border: 1px solid #0288d1; /* Blue border on focus for clarity */
+    background-color: #fff; /* Changes background color on focus for better visibility */
+    outline: none; /* Removes the default browser outline */
+}
+
+textarea {
+    resize: vertical; /* Allows users to resize the textarea vertically */
+    min-height: 120px; /* Sets a minimum height for textarea */
+}
+
+/* Helper Text Styling */
+.helper-text {
+    font-size: 0.9em;
+    color: #666; /* Lighter color for helper text */
+    margin-top: 5px; /* Small gap between input and helper text */
+}
+
+/* Success and Error Message Styling */
+.alert-danger, .alert-success {
+    padding: 15px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.alert-danger {
+    background-color: #ffcccb;
+    color: #d32f2f;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+/* Button Enhancements */
+button {
+    background-color: #0288d1;
+    color: #fff;
+    font-size: 1.1em;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    width: 100%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+button:hover {
+    background-color: #ff6200; /* Hover effect */
+    transform: scale(1.05); /* Slightly enlarges button on hover */
+}
+
+button:focus {
+    outline: none;
+}
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 1em;
+        background-color: #f9f9f9;
+        transition: border 0.3s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border: 1px solid #0288d1;
+        outline: none;
+    }
+
+    button {
+        background-color: #0288d1;
+        color: #fff;
+        font-size: 1.1em;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        width: 100%;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    button:hover {
+        background-color: #ff6200;
+    }
+
+    button:focus {
+        outline: none;
+    }
+
+    /* Success and Error Message Styling */
+    .alert-danger, .alert-success {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .alert-danger {
+        background-color: #ffcccb;
+        color: #d32f2f;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+</style>
 
 {% endblock %}

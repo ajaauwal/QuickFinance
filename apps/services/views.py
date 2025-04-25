@@ -1,17 +1,12 @@
-import os
-import random
-import string
-import requests
-import json
-import uuid
-from dotenv import load_dotenv
-from django.conf import settings
 from django.views import View
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Q
-from django.contrib.auth.decorators import login_required
+import os
+import requests
+from dotenv import load_dotenv
+
 # Forms
 from .forms import (
     AirtimeRechargeForm,
@@ -19,12 +14,11 @@ from .forms import (
     SchoolFeesPaymentForm,
     FlightBookingForm,
     LoanApplicationForm,
-    UtilityBillForm,
+    UtilityBillsForm,
     FlightPaymentForm,
     RescheduleFlightForm,
     CancelFlightForm,
     FlightResultsForm,
-    PayForServiceForm,
     WAECResultCheckerForm,
 )
 
@@ -33,29 +27,50 @@ from .models import FlightBooking, Service
 from apps.transactions.models import Wallet, Transaction
 
 # Integrations
-from paystackapi.paystack import Paystack
+from .paystack import PaystackAPI
 from .vtpass import VTPassAPI
 from .amadeus import AmadeusService
+from django.conf import settings
+import random
+import string
+import requests
+from django.conf import settings
+
+
 
 # Load environment variables
 load_dotenv()
 
-# VTPass API credentials
-VTPASS_BASE_URL = os.getenv('VTPASS_API_BASE_URL')
-VTPASS_PUBLIC_KEY = os.getenv('VTPASS_PUBLIC_KEY')
-VTPASS_SECRET_KEY = os.getenv('VTPASS_SECRET_KEY')
+# VTPass API credentials from .env
+VTPASS_API_KEY = os.getenv("VTPASS_API_KEY")
+VTPASS_SECRET_KEY = os.getenv("VTPASS_SECRET_KEY")
+PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
 
-# Paystack API credentials
-PAYSTACK_PUBLIC_KEY = os.getenv('PAYSTACK_PUBLIC_KEY')
-PAYSTACK_SECRET_KEY = os.getenv('PAYSTACK_SECRET_KEY')
-PAYSTACK_BASE_URL = os.getenv('PAYSTACK_BASE_URL', 'https://api.paystack.co/')
-PAYSTACK_PAYMENT_URL = os.getenv('PAYSTACK_PAYMENT_URL', 'https://api.paystack.co/transaction/initialize')
-PAYSTACK_TRANSFER_URL = os.getenv('PAYSTACK_TRANSFER_URL', 'https://api.paystack.co/transfer')
-PAYSTACK_CALLBACK_URL = os.getenv('PAYSTACK_CALLBACK_URL')
 
-# Amadeus API credentials
-AMADEUS_API_KEY = os.getenv('AMADEUS_API_KEY')
-AMADEUS_API_SECRET = os.getenv('AMADEUS_API_SECRET')
+def process_vtpass_payment(service_code, amount, email, phone_number):
+    """
+    Process payment with VTPass using details from the environment.
+    """
+    headers = {
+        'Authorization': f'Bearer {settings.VTPASS_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+    
+    data = {
+        "service_code": service_code,  # Service code (electricity, DSTV, etc.)
+        "amount": amount,  # Amount to be paid
+        "email": email,  # User's email
+        "phone_number": phone_number  # User's phone number
+    }
+    
+    response = requests.post(settings.VTPASS_API_URL, json=data, headers=headers)
+    
+    if response.status_code == 200:
+        return response.json()  # Returns the response in JSON format
+    else:
+        return {"status": "failure", "message": "Error processing VTPass payment"}
+
+
 
 
 
@@ -169,14 +184,17 @@ class PurchaseAirtimeView(View):
 
     def _process_debit_card_payment(self, request, network_provider, phone_number, amount):
         """Processes payment using debit card via VTPass API."""
-        vtpass = VTPassAPI()
+        vtpass = VTPassAPI()  # Instantiate the VTPass SDK
+        
         response = vtpass.purchase_airtime(
             provider=network_provider,
             number=phone_number,
             amount=amount,
             reference="unique_transaction_reference"
         )
+        
         if response.get('status') == 'success':
+            # Record the transaction
             Transaction.objects.create(
                 user=request.user,
                 service="Airtime Purchase",
@@ -190,15 +208,12 @@ class PurchaseAirtimeView(View):
         return redirect('services:purchase_airtime')
 
 
-
-
 class DataTopUpView(View):
     def get(self, request):
-        """ Handles the GET request to load the data top-up form """
         form = DataTopUpForm()
 
         wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None
-        transactions = Transaction.objects.filter(date_created__gte='2025-01-01')
+        transactions = Transaction.objects.filter(user=request.user)
 
         context = {
             'form': form,
@@ -213,15 +228,12 @@ class DataTopUpView(View):
         return render(request, 'services/data_topup.html', context)
 
     def post(self, request):
-        """ Handles the POST request for data top-up """
         form = DataTopUpForm(request.POST)
-        wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None
-        transactions = Transaction.objects.filter(user=request.user) if request.user.is_authenticated else []
-
         if form.is_valid():
             data = form.cleaned_data
             amount = data['amount']
             payment_method = data['payment_method']
+            user = request.user
 
             if payment_method == 'wallet':
                 return self._process_wallet_payment(request, amount, form)
@@ -229,99 +241,45 @@ class DataTopUpView(View):
             elif payment_method == 'debit_card':
                 return self._process_debit_card_payment(request, data)
 
-        # If form is invalid, re-render the form with full context
-        messages.error(request, "Please correct the errors below.")
-        context = {
-            'form': form,
-            'wallet': wallet,
-            'wallet_currencies': [{"currency": "NGN", "symbol": "₦", "balance": wallet.balance if wallet else 0}] if wallet else [],
-            'transactions': transactions,
-            'network_providers': NETWORK_PROVIDERS,
-        }
-        return render(request, 'services/data_topup.html', context)
-
-    def _generate_reference(self):
-        """ Generates a unique transaction reference """
-        return str(uuid.uuid4()).replace('-', '')[:12]
+        return render(request, 'services/data_topup.html', {'form': form})
 
     def _process_wallet_payment(self, request, amount, form):
-        """ Processes data top-up using wallet payment """
         wallet = get_object_or_404(Wallet, user=request.user)
+        if wallet.balance >= amount:
+            wallet.balance -= amount
+            wallet.save()
 
-        if wallet.balance < amount:
+            form.save(commit=False)
+            form.instance.user = request.user
+            form.save()
+
+            Transaction.objects.create(
+                user=request.user,
+                service=form.instance.service,
+                amount=amount,
+                payment_method='wallet'
+            )
+            messages.success(request, "Data top-up successful via wallet.")
+            return redirect('services:data_topup')
+        else:
             messages.error(request, "Insufficient wallet balance.")
             return redirect('services:data_topup')
 
-        # Deduct from wallet
-        wallet.balance -= amount
-        wallet.save()
-
-        # Save top-up
-        topup = form.save(commit=False)
-        topup.user = request.user
-        topup.save()
-
-        # Log transaction
-        Transaction.objects.create(
-            user=request.user,
-            service=topup.service,
-            amount=amount,
-            payment_method='wallet',
-            status='successful',
-            reference=self._generate_reference()
-        )
-
-        messages.success(request, "Data top-up successful via wallet.")
-        return redirect('services:data_topup')
-
     def _process_debit_card_payment(self, request, data):
-        """ Processes data top-up using debit card (VTPass API) """
-        vtpass = VTPassAPI()
-        reference = self._generate_reference()
-
-        try:
-            response = vtpass.purchase_data_plan(
-                provider=data['provider'],
-                number=data['phone_number'],
-                plan=data['data_plan'],
-                reference=reference
-            )
-
-            if response.get('status') == 'success':
-                # Log transaction
-                Transaction.objects.create(
-                    user=request.user,
-                    service='data_topup',
-                    amount=data['amount'],
-                    payment_method='debit_card',
-                    status='successful',
-                    reference=reference
-                )
-                messages.success(request, "Data top-up successful via debit card.")
-            else:
-                Transaction.objects.create(
-                    user=request.user,
-                    service='data_topup',
-                    amount=data['amount'],
-                    payment_method='debit_card',
-                    status='failed',
-                    reference=reference
-                )
-                messages.error(request, response.get('message', 'Error processing payment'))
-
-        except Exception as e:
-            # Log and handle any exceptions that occur during the payment process
-            Transaction.objects.create(
-                user=request.user,
-                service='data_topup',
-                amount=data['amount'],
-                payment_method='debit_card',
-                status='failed',
-                reference=reference
-            )
-            messages.error(request, f"An error occurred: {str(e)}")
-
-        return redirect('services:data_topup')
+        vtpass = VTPassAPI()  # Instantiate the VTPass SDK
+        response = vtpass.purchase_data_plan(
+            provider=data['provider'],
+            number=data['phone_number'],
+            plan=data['data_plan'],
+            reference="unique_transaction_reference"
+        )
+        
+        if response.get('status') == 'success':
+            messages.success(request, "Data top-up successful via debit card.")
+            return redirect('services:data_topup')
+        else:
+            messages.error(request, response.get('message', 'Error processing payment'))
+            return redirect('services:data_topup')
 
 
 
@@ -375,17 +333,6 @@ class FlightBookingView(View):
         
         return render(request, 'services/flight_booking.html', {'form': form})
 
-import os
-import requests
-from django.shortcuts import redirect
-from django.http import JsonResponse
-from django.views import View
-from .forms import FlightPaymentForm
-from .models import Wallet
-
-PAYSTACK_SECRET_KEY = os.getenv('PAYSTACK_SECRET_KEY')
-PAYSTACK_PAYMENT_URL = "https://api.paystack.co/transaction/initialize"
-
 class FlightPaymentView(View):
     def post(self, request):
         form = FlightPaymentForm(request.POST)
@@ -396,42 +343,29 @@ class FlightPaymentView(View):
             user = request.user
 
             if payment_method == 'wallet':
-                try:
-                    wallet = Wallet.objects.get(user=user)
-                    if wallet.balance >= amount:
-                        wallet.balance -= amount
-                        wallet.save()
-                        # Save the flight booking to the database
-                        return redirect('services:flight_booked')
-                    else:
-                        return JsonResponse({"error": "Insufficient wallet balance"}, status=400)
-                except Wallet.DoesNotExist:
-                    return JsonResponse({"error": "Wallet not found"}, status=400)
-
-            elif payment_method == 'debit_card':
-                headers = {
-                    "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
-                    "Content-Type": "application/json",
-                }
-                data = {
-                    "email": user.email,
-                    "amount": int(amount) * 100,  # Convert to kobo
-                    "callback_url": "https://maaunquickfinance.com/paystack/callback",
-                    "metadata": {
-                        "user_id": user.id,
-                        "flight_id": flight_id
-                    }
-                }
-                response = requests.post(PAYSTACK_PAYMENT_URL, json=data, headers=headers)
-                response_data = response.json()
-
-                if response_data.get('status'):
-                    return redirect(response_data['data']['authorization_url'])
+                wallet = Wallet.objects.get(user=user)
+                if wallet.balance >= amount:
+                    wallet.balance -= amount
+                    wallet.save()
+                    # Save the flight booking to the database
+                    return redirect('services:flight_booked')
                 else:
-                    return JsonResponse({"error": response_data.get('message', 'Error processing payment')}, status=400)
-
+                    return JsonResponse({"error": "Insufficient wallet balance"}, status=400)
+            elif payment_method == 'debit_card':
+                paystack = PaystackAPI()
+                response = paystack.initialize_transaction(
+                    reference="unique_transaction_reference",
+                    amount=amount,
+                    email=user.email,
+                    callback_url="https://maaunquickfinance.com/paystack/callback",
+                    metadata={"user_id": user.id}
+                )
+                if response.get('status'):
+                    return redirect(response['data']['authorization_url'])
+                else:
+                    return JsonResponse({"error": response.get('message', 'Error processing payment')}, status=400)
+        
         return redirect('services:flight_results')
-
 
 class RescheduleFlightView(View):
     def post(self, request):
@@ -461,82 +395,58 @@ class FlightCancelledView(View):
     def get(self, request):
         return render(request, 'services/flight_cancelled.html')
 
-import os
-import requests
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
-from django.views import View
-from .forms import FlightResultsForm
-from .models import Wallet, FlightBooking
-
-PAYSTACK_SECRET_KEY = os.getenv('PAYSTACK_SECRET_KEY')
-PAYSTACK_PAYMENT_URL = "https://api.paystack.co/transaction/initialize"
-
 class FlightResultsView(View):
     def get(self, request):
         form = FlightResultsForm()
-        return render(request, 'services/flight_results.html', {'form': form})
+        return render(request, 'services/flight_results.html')
 
     def post(self, request):
         form = FlightResultsForm(request.POST)
         if form.is_valid():
-            flight_id = form.cleaned_data.get('flight_id')
-            amount = form.cleaned_data.get('amount')
-            payment_method = form.cleaned_data.get('payment_method')
-            new_date = form.cleaned_data.get('new_date')
-            cancel_reason = form.cleaned_data.get('cancel_reason')
-            booking_reference = form.cleaned_data.get('booking_reference')
+            flight_id = form.cleaned_data['flight_id']
+            amount = form.cleaned_data['amount']
+            payment_method = form.cleaned_data['payment_method']
+            new_date = form.cleaned_data['new_date']
+            cancel_reason = form.cleaned_data['cancel_reason']
+            booking_reference = form.cleaned_data['booking_reference']
             user = request.user
 
-            if new_date:
-                # Reschedule the flight
-                flight = get_object_or_404(FlightBooking, flight_id=flight_id, user=user)
+            if payment_method == 'wallet':
+                wallet = Wallet.objects.get(user=user)
+                if wallet.balance >= amount:
+                    wallet.balance -= amount
+                    wallet.save()
+                    # Save the flight booking to the database
+                    return redirect('services:flight_booked')
+                else:
+                    return JsonResponse({"error": "Insufficient wallet balance"}, status=400)
+            elif payment_method == 'debit_card':
+                paystack = PaystackAPI()
+                response = paystack.initialize_transaction(
+                    reference="unique_transaction_reference",
+                    amount=amount,
+                    email=user.email,
+                    callback_url="https://maaunquickfinance.com/paystack/callback",
+                    metadata={"user_id": user.id}
+                )
+                if response.get('status'):
+                    return redirect(response['data']['authorization_url'])
+                else:
+                    return JsonResponse({"error": response.get('message', 'Error processing payment')}, status=400)
+            elif new_date:
+                # Process rescheduling
+                flight = get_object_or_404(FlightBooking, flight_id=flight_id)
                 flight.new_date = new_date
                 flight.save()
                 return redirect('services:flight_results')
-
-            if cancel_reason:
-                # Cancel the flight
-                flight = get_object_or_404(FlightBooking, flight_id=flight_id, user=user)
+            elif cancel_reason:
+                # Process cancellation
+                flight = get_object_or_404(FlightBooking, flight_id=flight_id)
                 flight.cancel_reason = cancel_reason
                 flight.status = 'Cancelled'
                 flight.save()
                 return redirect('services:flight_cancelled')
-
-            if payment_method == 'wallet':
-                try:
-                    wallet = Wallet.objects.get(user=user)
-                    if wallet.balance >= amount:
-                        wallet.balance -= amount
-                        wallet.save()
-                        return redirect('services:flight_booked')
-                    else:
-                        return JsonResponse({"error": "Insufficient wallet balance"}, status=400)
-                except Wallet.DoesNotExist:
-                    return JsonResponse({"error": "Wallet not found"}, status=400)
-
-            elif payment_method == 'debit_card':
-                headers = {
-                    "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
-                    "Content-Type": "application/json",
-                }
-                data = {
-                    "email": user.email,
-                    "amount": int(amount) * 100,  # Convert to kobo
-                    "callback_url": "https://maaunquickfinance.com/paystack/callback",
-                    "metadata": {
-                        "user_id": user.id,
-                        "flight_id": flight_id
-                    }
-                }
-                response = requests.post(PAYSTACK_PAYMENT_URL, json=data, headers=headers)
-                response_data = response.json()
-
-                if response_data.get('status'):
-                    return redirect(response_data['data']['authorization_url'])
-                else:
-                    return JsonResponse({"error": response_data.get('message', 'Error processing payment')}, status=400)
-
+        
         return redirect('services:flight_results')
 
 class FlightDetailView(View):
@@ -632,81 +542,68 @@ def loan_success(request):
     return render(request, 'services/loan_success.html')
 
 
-
-
 class SchoolFeesPaymentView(View):
     def get(self, request):
-        if not request.user.is_authenticated:
-            return redirect('login')  # Redirect unauthenticated users
-
         form = SchoolFeesPaymentForm()
-        wallet = get_object_or_404(Wallet, user=request.user)
-        transactions = Transaction.objects.filter(user=request.user)
-
+        wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None
+        transactions = Transaction.objects.filter(user=request.user) if request.user.is_authenticated else []
         context = {
             'form': form,
             'wallet': wallet,
             'wallet_currencies': [
-                {"currency": "NGN", "symbol": "₦", "balance": wallet.balance}
-            ],
+                {"currency": "NGN", "symbol": "₦", "balance": wallet.balance if wallet else 0}
+            ] if wallet else [],
             'transactions': transactions,
         }
         return render(request, 'services/school_fees_payment.html', context)
 
     def post(self, request):
-        if not request.user.is_authenticated:
-            return redirect('login')  # Redirect unauthenticated users
-        
         form = SchoolFeesPaymentForm(request.POST)
-        wallet = get_object_or_404(Wallet, user=request.user)
-
         if form.is_valid():
-            amount = form.cleaned_data['amount']
-            if wallet.balance >= amount:
-                # Deduct amount from wallet
-                wallet.balance -= amount
-                wallet.save()
+            data = form.cleaned_data
+            amount = data['amount']
+            payment_method = data['payment_method']
+            user = request.user
 
-                # Log transaction
-                Transaction.objects.create(
-                    user=request.user, 
-                    amount=amount, 
-                    description="School Fees Payment"
+            if payment_method == 'wallet':
+                wallet = Wallet.objects.get(user=user)
+                if wallet.balance >= amount:
+                    wallet.balance -= amount
+                    wallet.save()
+                    form.save(commit=False)
+                    form.instance.user = user
+                    form.save()
+                    return redirect('services:school_fees_payment_success')
+                else:
+                    return JsonResponse({"error": "Insufficient wallet balance"}, status=400)
+            
+            elif payment_method == 'debit_card':
+                vtpass = VTPassAPI()  # Assuming this is your VTPass SDK wrapper
+                response = vtpass.pay_school_fees(
+                    user_id=user.id,
+                    amount=amount,
+                    reference="unique_transaction_reference",
+                    email=user.email
                 )
 
-                return redirect('services:school_fees_payment_success')  # Redirect on success
-            else:
-                form.add_error(None, "Insufficient balance")
+                if response.get('status') == 'success':
+                    # Log the successful transaction
+                    Transaction.objects.create(
+                        user=user,
+                        service="School Fees Payment",
+                        amount=amount,
+                        payment_method='debit_card',
+                        status='success'
+                    )
+                    return redirect('services:school_fees_payment_success')
+                else:
+                    return JsonResponse({"error": response.get('message', 'Error processing payment')}, status=400)
 
-        # If form is invalid, re-render the page
-        transactions = Transaction.objects.filter(user=request.user)
-        context = {
-            'form': form,
-            'wallet': wallet,
-            'wallet_currencies': [{"currency": "NGN", "symbol": "₦", "balance": wallet.balance}],
-            'transactions': transactions,
-        }
-        return render(request, 'services/school_fees_payment.html', context)
+        return render(request, 'services/school_fees_payment.html', {'form': form})
 
-# Success Page View
 def school_fees_payment_success(request):
     return render(request, 'services/school_fees_payment_success.html')
 
-
-
-
-from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import DetailView
-from .models import Service
-
-class ServiceDetailView(DetailView):
-    model = Service
-    template_name = "services/service_detail.html"
-    context_object_name = "service"
-
-    def get(self, request, *args, **kwargs):
-        service = get_object_or_404(Service, slug=self.kwargs.get("slug"))
-        return redirect(service.get_absolute_url())  # Redirecting to the service URL
 
 
 
@@ -736,13 +633,85 @@ def process_paystack_payment(amount, email, card_details):
     
     return {"status": "failure", "message": response_data["message"]}
 
-# Payment views for specific services
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import UtilityBills
+from .forms import UtilityBillsForm
+
+@login_required
+def utility_bills(request):
+    user = request.user
+    wallet = get_object_or_404(Wallet, user=user)
+    transactions = Transaction.objects.filter(user=user).order_by('-created_at')
+
+    if request.method == 'POST':
+        form = UtilityBillsForm(request.POST)
+        if form.is_valid():
+            provider = form.cleaned_data['provider']
+            account_number = form.cleaned_data['account_number']
+            amount = form.cleaned_data['amount']
+            email = form.cleaned_data['email']
+
+            # Check wallet balance
+            if wallet.balance >= amount:
+                wallet.balance -= amount
+                wallet.save()
+
+                # Save to UtilityBills
+                UtilityBills.objects.create(
+                    user=user,
+                    service_type=provider,
+                    account_number=account_number,
+                    amount=amount,
+                    cable_provider=provider,  # Optional; reused here
+                    payment_method='wallet',
+                )
+
+                # Log transaction
+                Transaction.objects.create(
+                    user=user,
+                    service=provider,
+                    amount=amount,
+                    payment_method='wallet',
+                    status='success'
+                )
+
+                messages.success(request, f"{provider.title()} bill paid successfully using wallet.")
+                return redirect('utility_bills_history')
+            else:
+                messages.error(request, "Insufficient wallet balance.")
+        else:
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        form = UtilityBillsForm()
+
+    context = {
+        'form': form,
+        'wallet': wallet,
+        'wallet_currencies': [
+            {"currency": "NGN", "symbol": "₦", "balance": wallet.balance}
+        ],
+        'transactions': transactions,
+    }
+
+    return render(request, 'services/utility_bills.html', context)
+
+
+
+@login_required
+def utility_bills_history(request):
+    bills = UtilityBills.objects.filter(user=request.user).order_by('-date_created')
+    return render(request, 'services/utility_bills_history.html', {'bills': bills})
+
+
+
 def electricity_payment(request):
     wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None 
     transactions = Transaction.objects.filter(user=request.user) if request.user.is_authenticated else []
 
     if request.method == 'POST':
-        form = UtilityBillForm(request.POST)
+        form = UtilityBillsForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
             amount = data['amount']
@@ -760,7 +729,7 @@ def electricity_payment(request):
                 else:
                     return JsonResponse({"error": "Insufficient wallet balance"}, status=400)
             elif payment_method == 'debit_card':
-                response = process_paystack_payment(  # Call the function directly
+                response = process_paystack_payment(
                     amount=amount,
                     email=data['email'],
                     card_details=data['card_details']
@@ -769,8 +738,20 @@ def electricity_payment(request):
                     return redirect('services:electricity_payment_success')
                 else:
                     return JsonResponse({"error": response.get('message', 'Error processing payment')}, status=400)
+            elif payment_method == 'vtpass':
+                vtpass_service_code = "electricity_service_code"  # Replace with actual VTPass service code for Electricity
+                response = process_vtpass_payment(
+                    service_code=vtpass_service_code,
+                    amount=amount,
+                    email=data['email'],
+                    phone_number=data['phone_number']
+                )
+                if response.get('status') == "success":
+                    return redirect('services:electricity_payment_success')
+                else:
+                    return JsonResponse({"error": response.get('message', 'Error processing VTPass payment')}, status=400)
     else:
-        form = UtilityBillForm()
+        form = UtilityBillsForm()
 
     context = {
         'form': form,
@@ -783,15 +764,14 @@ def electricity_payment(request):
 
     return render(request, 'services/electricity_payment.html', context)
 
-def electricity_payment_success(request):
-    return render(request, 'services/electricity_payment_success.html')
+
 
 def dstv_payment(request):
     wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None 
     transactions = Transaction.objects.filter(user=request.user) if request.user.is_authenticated else []
 
     if request.method == 'POST':
-        form = UtilityBillForm(request.POST)
+        form = UtilityBillsForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
             amount = data['amount']
@@ -818,8 +798,20 @@ def dstv_payment(request):
                     return redirect('services:dstv_payment_success')
                 else:
                     return JsonResponse({"error": response.get('message', 'Error processing payment')}, status=400)
+            elif payment_method == 'vtpass':
+                vtpass_service_code = "dstv_service_code"  # Replace with actual VTPass service code for DSTV
+                response = process_vtpass_payment(
+                    service_code=vtpass_service_code,
+                    amount=amount,
+                    email=data['email'],
+                    phone_number=data['phone_number']
+                )
+                if response.get('status') == "success":
+                    return redirect('services:dstv_payment_success')
+                else:
+                    return JsonResponse({"error": response.get('message', 'Error processing VTPass payment')}, status=400)
     else:
-        form = UtilityBillForm()
+        form = UtilityBillsForm()
 
     context = {
         'form': form,
@@ -832,15 +824,14 @@ def dstv_payment(request):
 
     return render(request, 'services/dstv_payment.html', context)
 
-def dstv_payment_success(request):
-    return render(request, 'services/dstv_payment_success.html')
+
 
 def gotv_payment(request):
     wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None 
     transactions = Transaction.objects.filter(user=request.user) if request.user.is_authenticated else []
 
     if request.method == 'POST':
-        form = UtilityBillForm(request.POST)
+        form = UtilityBillsForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
             amount = data['amount']
@@ -867,8 +858,20 @@ def gotv_payment(request):
                     return redirect('services:gotv_payment_success')
                 else:
                     return JsonResponse({"error": response.get('message', 'Error processing payment')}, status=400)
+            elif payment_method == 'vtpass':
+                vtpass_service_code = "gotv_service_code"  # Replace with actual VTPass service code for GOTV
+                response = process_vtpass_payment(
+                    service_code=vtpass_service_code,
+                    amount=amount,
+                    email=data['email'],
+                    phone_number=data['phone_number']
+                )
+                if response.get('status') == "success":
+                    return redirect('services:gotv_payment_success')
+                else:
+                    return JsonResponse({"error": response.get('message', 'Error processing VTPass payment')}, status=400)
     else:
-        form = UtilityBillForm()
+        form = UtilityBillsForm()
 
     context = {
         'form': form,
@@ -881,15 +884,13 @@ def gotv_payment(request):
 
     return render(request, 'services/gotv_payment.html', context)
 
-def gotv_payment_success(request):
-    return render(request, 'services/gotv_payment_success.html')
 
 def startimes_payment(request):
     wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None 
     transactions = Transaction.objects.filter(user=request.user) if request.user.is_authenticated else []
 
     if request.method == 'POST':
-        form = UtilityBillForm(request.POST)
+        form = UtilityBillsForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
             amount = data['amount']
@@ -916,8 +917,20 @@ def startimes_payment(request):
                     return redirect('services:startimes_payment_success')
                 else:
                     return JsonResponse({"error": response.get('message', 'Error processing payment')}, status=400)
+            elif payment_method == 'vtpass':
+                vtpass_service_code = "startimes_service_code"  # Replace with actual VTPass service code for Startimes
+                response = process_vtpass_payment(
+                    service_code=vtpass_service_code,
+                    amount=amount,
+                    email=data['email'],
+                    phone_number=data['phone_number']
+                )
+                if response.get('status') == "success":
+                    return redirect('services:startimes_payment_success')
+                else:
+                    return JsonResponse({"error": response.get('message', 'Error processing VTPass payment')}, status=400)
     else:
-        form = UtilityBillForm()
+        form = UtilityBillsForm()
 
     context = {
         'form': form,
@@ -930,166 +943,61 @@ def startimes_payment(request):
 
     return render(request, 'services/startimes_payment.html', context)
 
-def startimes_payment_success(request):
-    return render(request, 'services/startimes_payment_success.html')
-
-from django.http import JsonResponse
-from django.db.models import Q
-from .models import Service
 
 def search_view(request):
-    query = request.GET.get('q', '').strip()
-    results = []
+    query = request.GET.get('q', '')  # Get the query parameter from the URL
+    results = []  # Default empty result list
 
     if query:
-        services = Service.objects.filter(Q(name__icontains=query))[:5]  # Limit results to 5
-        results = [{"id": s.id, "name": s.name, "category": s.category} for s in services]
+        # Perform a case-insensitive search on name and description fields
+        results = Service.objects.filter(
+            Q(name__icontains=query) | Q(description__icontains=query)
+        )
 
-    return JsonResponse({"results": results})
-
-
-
-
+    # Render the results in the search_results.html template
+    return render(request, 'services/search_results.html', {'query': query, 'results': results})
 
 
 class WAECResultCheckerView(View):
     def get(self, request):
-        """Displays the WAEC Result Checker form."""
         form = WAECResultCheckerForm()
-        wallet, transactions = None, None
-
-        if request.user.is_authenticated:
-            wallet, _ = Wallet.objects.get_or_create(user=request.user)  # Ensure wallet exists
-            transactions = Transaction.objects.filter(user=request.user)
-
-        context = {
-            'form': form,
-            'wallet': wallet,
-            'wallet_currencies': [
-                {"currency": "NGN", "symbol": "₦", "balance": wallet.balance if wallet else 0}
-            ] if wallet else [],
-            'transactions': transactions or [],
-        }
-        return render(request, 'services/waec_result_checker.html', context)
+        return render(request, 'services/waec_result_checker.html', {'form': form})
 
     def post(self, request):
-        """Processes the WAEC Result Checker form submission."""
         form = WAECResultCheckerForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
-            user = request.user
+            candidate_number = data['candidate_number']
+            year_of_exam = data['year_of_exam']
             payment_method = data['payment_method']
+            user = request.user
             email = data['email']
+            card_details = data.get('card_details', '')
 
             if payment_method == 'wallet':
-                wallet = get_object_or_404(Wallet, user=user)
+                wallet = Wallet.objects.get(user=user)
                 if wallet.balance >= 500:  # Example cost for WAEC PIN
                     wallet.balance -= 500
                     wallet.save()
-
-                    # Generate WAEC PIN and log transaction
                     result_pin = self._generate_waec_result_pin()
                     self._log_transaction(user, 'WAEC Result Checker', 500)
-
                     return JsonResponse({"success": True, "pin": result_pin})
-                return JsonResponse({"error": "Insufficient wallet balance"}, status=400)
-
+                else:
+                    return JsonResponse({"error": "Insufficient wallet balance"}, status=400)
+            
             elif payment_method == 'debit_card':
-                paystack_response = self._process_paystack_payment(500, email)
-                if paystack_response.get('status') == "success":
-                    return JsonResponse({"success": True, "redirect_url": paystack_response['verification_url']})
-                return JsonResponse({"error": paystack_response.get('message', 'Error processing payment')}, status=400)
+                response = self._process_paystack_payment(500, email, card_details)
+                if response.get('status') == "success":
+                    result_pin = self._generate_waec_result_pin()
+                    return JsonResponse({"success": True, "pin": result_pin})
+                else:
+                    return JsonResponse({"error": response.get('message', 'Error processing payment')}, status=400)
 
         return render(request, 'services/waec_result_checker.html', {'form': form})
 
     def _generate_waec_result_pin(self):
-        """Generates a random 12-character alphanumeric PIN for WAEC result checking."""
+        # Generate a random 12-character alphanumeric PIN for result checking
         return ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
-
-    def _process_paystack_payment(self, amount, email):
-        """Initializes Paystack payment and returns the redirection URL."""
-        headers = {
-            "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
-            "Content-Type": "application/json"
-        }
-        data = {
-            "amount": int(amount * 100),  # Convert amount to kobo
-            "email": email,
-            "currency": "NGN",
-            "callback_url": "https://maaunquickfinance.com/paystack/callback",
-        }
-
-        response = requests.post(PAYSTACK_PAYMENT_URL, json=data, headers=headers)
-        response_data = response.json()
-
-        if response_data.get("status") is True:
-            return {"status": "success", "verification_url": response_data["data"]["authorization_url"]}
-
-        return {"status": "failure", "message": response_data.get("message", "Error processing payment")}
-
-    def _log_transaction(self, user, description, amount):
-        """Logs a transaction in the database."""
-        Transaction.objects.create(
-            user=user,
-            description=description,
-            amount=amount,
-            transaction_type="debit"
-        )
-
-
-
-
-
-class PayForServiceView(View):
-    def get(self, request):
-        # Display the form for selecting the service and payment method
-        form = PayForServiceForm()
-        wallet = None
-        transactions = []
-
-        if request.user.is_authenticated:
-            wallet, _ = Wallet.objects.get_or_create(user=request.user)  # Ensure wallet exists
-            transactions = Transaction.objects.filter(user=request.user)
-
-        context = {
-            'form': form,
-            'wallet': wallet,
-            'wallet_currencies': [
-                {"currency": "NGN", "symbol": "₦", "balance": wallet.balance if wallet else 0}
-            ] if wallet else [],
-            'transactions': transactions,
-        }
-        return render(request, 'services/pay_for_service.html', context)
-
-    def post(self, request):
-        form = PayForServiceForm(request.POST)
-        if form.is_valid():
-            data = form.cleaned_data
-            amount = data['amount']
-            payment_method = data['payment_method']
-            user = request.user
-
-            if payment_method == 'wallet':
-                wallet, _ = Wallet.objects.get_or_create(user=user)  # Ensure wallet exists
-                if wallet.balance >= amount:
-                    wallet.balance -= amount
-                    wallet.save()
-                    form.instance.user = user
-                    form.save()
-                    self._log_transaction(user, 'Service Payment', amount)
-                    return redirect('services:payment_success')
-                else:
-                    return JsonResponse({"error": "Insufficient wallet balance"}, status=400)
-
-            elif payment_method == 'debit_card':
-                response = self._process_paystack_payment(amount, data['email'], data['card_details'])
-                if response.get('status') == 'success':
-                    self._log_transaction(user, 'Service Payment', amount)
-                    return redirect('services:payment_success')
-                else:
-                    return JsonResponse({"error": response.get('message', 'Error processing payment')}, status=400)
-
-        return render(request, 'services/pay_for_service.html', {'form': form})
 
     def _process_paystack_payment(self, amount, email, card_details):
         headers = {
@@ -1125,49 +1033,15 @@ class PayForServiceView(View):
         )
 
 
-def payment_success(request):
-    return render(request, 'services/payment_success.html')
+def dstv_payment_success(request):
+    return render(request, 'services/dstv_payment_success.html')
 
+def gotv_payment_success(request):
+    return render(request, 'services/gotv_payment_success.html')
 
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-import logging
-from apps.services.models import Service
-from apps.transactions.models import Wallet, Transaction
+def startimes_payment_success(request):
+    return render(request, 'services/startimes_payment_success.html')
 
-logger = logging.getLogger(__name__)
+def electricity_payment_success(request):
+    return render(request, 'services/electricity_payment_success.html')
 
-@login_required
-def utility_bills(request):
-    services = Service.objects.filter(category="Bills")  # Fetch services under "Bills"
-    
-    # Retrieve or create the wallet
-    wallet, created = Wallet.objects.get_or_create(user=request.user)
-    
-    # Ensure wallet is a Wallet instance
-    if not isinstance(wallet, Wallet):
-        logger.error(f"Unexpected wallet type: {type(wallet)}. Attempting to refetch.")
-        wallet = Wallet.objects.filter(user=request.user).first()
-
-    # Handle the case where wallet is still invalid
-    if not wallet:
-        logger.error("Failed to retrieve a valid Wallet instance. Returning empty transactions.")
-        transactions = Transaction.objects.none()
-        wallet_balance = 0.0
-    else:
-        transactions = Transaction.objects.filter(wallet=wallet)
-        wallet_balance = wallet.balance
-
-    context = {
-        'services': services,
-        'wallet': wallet,
-        'wallet_currencies': [{"currency": "NGN", "symbol": "₦", "balance": wallet_balance}],
-        'transactions': transactions,
-    }
-
-    return render(request, 'services/utility_bills.html', context)
-
-
-def service_details(request, slug):
-    service = get_object_or_404(Service, slug=slug)
-    return render(request, 'services/service_details.html', {'service': service})

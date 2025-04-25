@@ -1,10 +1,30 @@
 from django import forms
 from django.core.validators import RegexValidator
-from .models import AirtimeRecharge, DataTopUp, LoanApplication, SchoolFeesPayment, FlightBooking, ElectricityPayment, DstvSubscription, GoTVSubscription, StarTimesSubscription
-from django import forms
-from .models import ServicePayment
+from .models import (
+    AirtimeRecharge, DataTopUp, LoanApplication, SchoolFeesPayment, FlightBooking,
+    ElectricityPayment, DstvSubscription, GoTVSubscription, StarTimesSubscription,
+    ServicePayment
+)
 
-class PayForServiceForm(forms.ModelForm):
+# Validator for Nigerian phone numbers
+phone_validator = RegexValidator(
+    regex=r'^[0]\d{10}$',
+    message="Enter a valid 11-digit phone number starting with 0."
+)
+
+# Services for selection dropdown
+SERVICES = [
+    ('AirtimeRecharge', 'Airtime Recharge'),
+    ('DataPurchase', 'Data Purchase'),
+    ('SchoolFeesPayment', 'School Fees Payment'),
+    ('AirlineBooking', 'Airline Booking'),
+    ('ElectricityPayment', 'Electricity Payment'),
+    ('DstvSubscription', 'DSTV Subscription'),
+    ('GoTVSubscription', 'GoTV Subscription'),
+    ('StarTimesSubscription', 'StarTimes Subscription'),
+]
+
+class ServicePaymentForm(forms.ModelForm):
     class Meta:
         model = ServicePayment
         fields = ['service_name', 'customer_name', 'phone_number', 'amount']
@@ -21,32 +41,7 @@ class PayForServiceForm(forms.ModelForm):
             'amount': 'Amount',
         }
 
-
-
-
-# Validator for Nigerian phone numbers
-phone_validator = RegexValidator(
-    regex=r'^[0]\d{10}$',
-    message="Enter a valid 11-digit phone number starting with 0."
-)
-
-# Centralized service list
-SERVICES = [
-    ('AirtimeRecharge', 'Airtime Recharge'),
-    ('DataPurchase', 'Data Purchase'),
-    ('SchoolFeesPayment', 'School Fees Payment'),
-    ('AirlineBooking', 'Airline Booking'),
-    ('ElectricityPayment', 'Electricity Payment'),
-    ('DstvSubscription', 'DSTV Subscription'),
-    ('GoTVSubscription', 'GoTV Subscription'),
-    ('StarTimesSubscription', 'StarTimes Subscription'),
-]
-
-# Form for selecting a service
-class ServiceSelectionForm(forms.Form):
-    service = forms.ChoiceField(choices=SERVICES, label="Select Service")
-
-
+# Airtime Recharge Form
 class AirtimeRechargeForm(forms.ModelForm):
     NETWORK_PROVIDERS = [
         ('mtn', 'MTN', 'images/mtn.png'),
@@ -75,18 +70,9 @@ class AirtimeRechargeForm(forms.ModelForm):
         model = AirtimeRecharge
         fields = ['network_provider', 'phone_number', 'amount']
 
-    def get_network_logo(self, network):
-        # Fetch the logo URL for the selected network provider
-        for choice in self.NETWORK_PROVIDERS:
-            if choice[0] == network:
-                return choice[2]  # Return the logo URL
-        return ''  # Return empty if no match found
-
-
-# Data Purchase Form
+# Data TopUp Form
 class DataTopUpForm(forms.ModelForm):
-    # Use only the first two elements (value, name) for the provider
-    DATA_PROVIDERS = [(x[0], x[1]) for x in AirtimeRechargeForm.NETWORK_PROVIDERS]
+    DATA_PROVIDERS = AirtimeRechargeForm.NETWORK_PROVIDERS
     DATA_PLANS = [
         ('daily', 'Daily Subscription'),
         ('weekly', 'Weekly Subscription'),
@@ -97,19 +83,14 @@ class DataTopUpForm(forms.ModelForm):
         ('1_year', '1-Year Subscription'),
     ]
 
-    provider = forms.ChoiceField(choices=DATA_PROVIDERS, label="Data Provider")
+    provider = forms.ChoiceField(choices=[(x[0], x[1]) for x in DATA_PROVIDERS], label="Data Provider")
     data_plan = forms.ChoiceField(choices=DATA_PLANS, label="Subscription Duration")
-    phone_number = forms.CharField(
-        max_length=11,
-        label="Phone Number",
-        validators=[phone_validator]
-    )
+    phone_number = forms.CharField(max_length=11, validators=[phone_validator], label="Phone Number")
     amount = forms.DecimalField(max_digits=10, decimal_places=2, label="Amount")
 
     class Meta:
         model = DataTopUp
         fields = ['provider', 'data_plan', 'phone_number', 'amount']
-
 
 # School Fees Payment Form
 class SchoolFeesPaymentForm(forms.ModelForm):
@@ -120,38 +101,30 @@ class SchoolFeesPaymentForm(forms.ModelForm):
         ('science', 'Faculty of Science - ₦90,000'),
     ]
 
-    faculty = forms.ChoiceField(choices=FACULTIES, label="Select Faculty")
-    student_id = forms.CharField(
-        max_length=20,
-        label="Student ID",
-        widget=forms.TextInput(attrs={'placeholder': 'Enter Student ID'})
-    )
-    amount = forms.DecimalField(max_digits=10, decimal_places=2, label="Fees Amount")
+    faculty = forms.ChoiceField(choices=FACULTIES)
+    student_id = forms.CharField(max_length=20, widget=forms.TextInput(attrs={'placeholder': 'Enter Student ID'}))
+    amount = forms.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
         model = SchoolFeesPayment
         fields = ['faculty', 'student_id', 'amount']
 
-
-
-
-
+# Flight Booking and Payment Forms
 class FlightBookingForm(forms.Form):
-    departure_city = forms.CharField(max_length=100, required=True)
-    arrival_city = forms.CharField(max_length=100, required=True)
+    departure_city = forms.CharField(max_length=100)
+    arrival_city = forms.CharField(max_length=100)
     departure_date = forms.DateField(widget=forms.TextInput(attrs={'type': 'date'}))
     return_date = forms.DateField(widget=forms.TextInput(attrs={'type': 'date'}), required=False)
-    number_of_passengers = forms.IntegerField(min_value=1, required=True)
+    number_of_passengers = forms.IntegerField(min_value=1)
     children = forms.IntegerField(min_value=0, required=False)
     infants = forms.IntegerField(min_value=0, required=False)
-    contact_number = forms.CharField(max_length=15, required=True)
+    contact_number = forms.CharField(max_length=15)
 
     def clean_contact_number(self):
         contact_number = self.cleaned_data.get('contact_number')
         if len(contact_number) < 10:
             raise forms.ValidationError("Please enter a valid contact number.")
         return contact_number
-
 
 class FlightPaymentForm(forms.Form):
     flight_id = forms.CharField(widget=forms.HiddenInput())
@@ -167,13 +140,13 @@ class FlightResultsForm(forms.Form):
     payment_method = forms.ChoiceField(choices=[('wallet', 'Wallet'), ('debit_card', 'Debit Card')])
     status = forms.CharField(widget=forms.HiddenInput())
     booking_date = forms.DateField(widget=forms.HiddenInput())
-    cancel_reason = forms.CharField(widget=forms.Textarea(attrs={'required': True}), required=False)
+    cancel_reason = forms.CharField(widget=forms.Textarea(), required=False)
     new_date = forms.DateField(widget=forms.TextInput(attrs={'type': 'date'}), required=False)
     booking_reference = forms.CharField(max_length=100, required=False, widget=forms.HiddenInput())
 
 class FlightBookedForm(forms.Form):
     flight_id = forms.CharField(widget=forms.HiddenInput())
-    booking_reference = forms.CharField(max_length=100, required=True)
+    booking_reference = forms.CharField(max_length=100)
 
 class RescheduleFlightForm(forms.Form):
     flight_id = forms.CharField(widget=forms.HiddenInput())
@@ -181,33 +154,25 @@ class RescheduleFlightForm(forms.Form):
 
 class CancelFlightForm(forms.Form):
     flight_id = forms.CharField(widget=forms.HiddenInput())
-    cancel_reason = forms.CharField(widget=forms.Textarea(attrs={'required': True}))
+    cancel_reason = forms.CharField(widget=forms.Textarea())
 
-# Electricity Payment Form
+# Electricity Payment
 class ElectricityPaymentForm(forms.ModelForm):
     METER_TYPES = [
         ('prepaid', 'Prepaid Meter'),
         ('postpaid', 'Postpaid Meter'),
     ]
 
-    meter_type = forms.ChoiceField(choices=METER_TYPES, label="Meter Type")
-    meter_number = forms.CharField(
-        max_length=30,
-        label="Meter Number",
-        widget=forms.TextInput(attrs={'placeholder': 'Enter Meter Number'})
-    )
-    amount = forms.DecimalField(max_digits=10, decimal_places=2, label="Amount")
-    contact_number = forms.CharField(
-        max_length=11,
-        label="Contact Number",
-        validators=[phone_validator]
-    )
+    meter_type = forms.ChoiceField(choices=METER_TYPES)
+    meter_number = forms.CharField(max_length=30, widget=forms.TextInput(attrs={'placeholder': 'Enter Meter Number'}))
+    amount = forms.DecimalField(max_digits=10, decimal_places=2)
+    contact_number = forms.CharField(max_length=11, validators=[phone_validator])
 
     class Meta:
         model = ElectricityPayment
         fields = ['meter_type', 'meter_number', 'amount', 'contact_number']
 
-# DSTV Subscription Form
+# DSTV Subscription
 class DstvSubscriptionForm(forms.ModelForm):
     CUSTOMER_TYPES = [
         ('residential', 'Residential'),
@@ -223,25 +188,16 @@ class DstvSubscriptionForm(forms.ModelForm):
         ('padi', 'Padi - ₦1,800'),
     ]
 
-    customer_type = forms.ChoiceField(choices=CUSTOMER_TYPES, label="Customer Type")
-    smart_card_number = forms.CharField(
-        max_length=30,
-        label="DSTV Smart Card Number",
-        widget=forms.TextInput(attrs={'placeholder': 'Enter Smart Card Number'})
-    )
-    package = forms.ChoiceField(choices=DSTV_PACKAGES, label="DSTV Package")
-    amount = forms.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        label="Amount",
-        min_value=1.00
-    )
+    customer_type = forms.ChoiceField(choices=CUSTOMER_TYPES)
+    smart_card_number = forms.CharField(max_length=30)
+    package = forms.ChoiceField(choices=DSTV_PACKAGES)
+    amount = forms.DecimalField(max_digits=10, decimal_places=2, min_value=1.00)
 
     class Meta:
         model = DstvSubscription
         fields = ['customer_type', 'smart_card_number', 'package', 'amount']
 
-# GoTV Subscription Form
+# GoTV Subscription
 class GoTVSubscriptionForm(forms.ModelForm):
     CUSTOMER_TYPES = DstvSubscriptionForm.CUSTOMER_TYPES
 
@@ -254,51 +210,31 @@ class GoTVSubscriptionForm(forms.ModelForm):
         ('smallie', 'Smallie - ₦800'),
     ]
 
-    customer_type = forms.ChoiceField(choices=CUSTOMER_TYPES, label="Customer Type")
-    smart_card_number = forms.CharField(
-        max_length=30,
-        label="GoTV Smart Card Number",
-        widget=forms.TextInput(attrs={'placeholder': 'Enter Smart Card Number'})
-    )
-    package = forms.ChoiceField(choices=GOTV_PACKAGES, label="GoTV Package")
-    amount = forms.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        label="Amount",
-        min_value=1.00
-    )
+    customer_type = forms.ChoiceField(choices=CUSTOMER_TYPES)
+    smart_card_number = forms.CharField(max_length=30)
+    package = forms.ChoiceField(choices=GOTV_PACKAGES)
+    amount = forms.DecimalField(max_digits=10, decimal_places=2, min_value=1.00)
 
     class Meta:
         model = GoTVSubscription
         fields = ['customer_type', 'smart_card_number', 'package', 'amount']
 
-# StarTimes Subscription Form
+# StarTimes Subscription
 class StarTimesSubscriptionForm(forms.ModelForm):
     CUSTOMER_TYPES = DstvSubscriptionForm.CUSTOMER_TYPES
 
     STARTIMES_PACKAGES = [
-        ('nova_dish', 'Nova (dish) - ₦1,700'),
-        ('nova_antenna', 'Nova (antenna) - ₦1,700'),
-        ('basic_antenna', 'Basic (antenna) - ₦3,300'),
-        ('smart_dish', 'Smart (dish) - ₦4,200'),
-        ('classic_antenna', 'Classic (antenna) - ₦5,000'),
-        ('super_dish', 'Super (dish) - ₦8,200'),
-        ('chinese_dish', 'Chinese (dish) - ₦16,000'),
+        ('nova_dish', 'Nova (Dish) - ₦1,700'),
+        ('nova_antenna', 'Nova (Antenna) - ₦1,300'),
+        ('basic', 'Basic - ₦2,500'),
+        ('smart', 'Smart - ₦3,500'),
+        ('classic', 'Classic - ₦4,500'),
     ]
 
-    customer_type = forms.ChoiceField(choices=CUSTOMER_TYPES, label="Customer Type")
-    smart_card_number = forms.CharField(
-        max_length=30,
-        label="StarTimes Smart Card Number",
-        widget=forms.TextInput(attrs={'placeholder': 'Enter Smart Card Number'})
-    )
-    package = forms.ChoiceField(choices=STARTIMES_PACKAGES, label="StarTimes Package")
-    amount = forms.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        label="Amount",
-        min_value=1.00
-    )
+    customer_type = forms.ChoiceField(choices=CUSTOMER_TYPES)
+    smart_card_number = forms.CharField(max_length=30)
+    package = forms.ChoiceField(choices=STARTIMES_PACKAGES)
+    amount = forms.DecimalField(max_digits=10, decimal_places=2, min_value=1.00)
 
     class Meta:
         model = StarTimesSubscription
@@ -319,7 +255,7 @@ class LoanApplicationForm(forms.ModelForm):
 
 
 
-class UtilityBillForm(forms.Form):
+class UtilityBillsForm(forms.Form):
     provider = forms.ChoiceField(choices=[
         ('electricity', 'Electricity'),
         ('dstv', 'DSTV'),

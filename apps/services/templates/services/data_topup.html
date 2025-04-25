@@ -2,214 +2,11 @@
 
 {% block content %}
 {% load static %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hero Bar with Service Provider Logos</title>
-    <style>
-        /* General Reset */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        /* Hero Bar Style */
-        .hero-bar {
-            background-color: #76040400;
-            padding: 20px;
-            position: relative;
-        }
-
-        /* Content inside the hero bar */
-        .hero-bar-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* Arrow container to show the down arrow */
-        .arrow-container {
-            cursor: pointer;
-        }
-
-        #dropdown-arrow {
-            font-size: 24px;
-            transition: transform 0.3s ease;
-        }
-
-        /* Phone number container on the right */
-        .phone-number-container {
-            display: flex;
-            justify-content: flex-end;
-            flex: 1;
-        }
-
-        #phone-number {
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        /* Provider logos dropdown container */
-        .provider-logos {
-            display: none; /* Initially hidden */
-            padding-top: 20px;
-            text-align: center;
-        }
-
-        .logo-container {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-        }
-
-        .logo-container img {
-            width: 50px;
-            height: 50px;
-            object-fit: contain;
-            transition: transform 0.3s ease;
-        }
-
-        .logo-container img:hover {
-            transform: scale(1.1);
-        }
-
-        /* Body container for network provider categories */
-        .body-container {
-            padding: 40px 20px;
-            background-color: #f80a0a00;
-        }
-
-        .network-provider-section {
-            display: none;
-        }
-
-        .category-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .category-item {
-            padding: 10px 10px;
-            background-color: #007BFF;
-            color: white;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .category-item:hover {
-            background-color: #0056b3;
-        }
-
-        /* Selected network provider name */
-        #selected-network {
-            margin-top: 20px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        /* Select Network Style */
-        #select-network-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        #select-network-container select {
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        /* Mobile Styles */
-        @media (max-width: 768px) {
-            .hero-bar-content {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .phone-number-container {
-                margin-top: 10px;
-            }
-
-            .category-list {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .category-item {
-                width: 100%;
-                text-align: center;
-            }
-
-            .logo-container {
-                gap: 10px;
-            }
-        }
-
-
-        .bundle-section {
-    margin: 40px 0;
-    padding: 0 20px;
-}
-
-.bundle-title {
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin-bottom: 20px;
-    color: #1f2937; /* slate-800 */
-    text-align: center;
-}
-
-.bundle-list {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-}
-
-.bundle-card {
-    background: #ffffff;
-    padding: 20px;
-    margin: 10px;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    cursor: pointer;
-    width: 260px;
-    max-width: 100%;
-    text-align: center;
-    border: 1px solid #e5e7eb; /* tailwind slate-200 */
-}
-
-.bundle-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-    border-color: #6366f1; /* tailwind indigo-500 */
-}
-
-.bundle-card h4 {
-    font-size: 1.2rem;
-    color: #374151; /* tailwind slate-700 */
-    margin-bottom: 8px;
-}
-
-.bundle-card p {
-    color: #6b7280; /* tailwind slate-500 */
-    font-size: 0.95rem;
-    line-height: 1.4;
-}
-
-</style>
-</head>
 
 <body>
+    <!-- Go Back Button -->
+    <a href="javascript:history.back()" class="go-back-btn">← Go Back</a>
+
     <div class="hero-bar">
         <div class="hero-bar-content">
             <div class="arrow-container">
@@ -255,8 +52,321 @@
         </div>
     </div>
 
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+    
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+    
+        /* Hero Bar Style */
+        .hero-bar {
+            background: linear-gradient(135deg, #3f72af, #3a6073);
+            padding: 20px;
+            position: relative;
+            border-bottom: 5px solid #333;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    
+        /* Content inside the hero bar */
+        .hero-bar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+    
+        /* Arrow container to show the down arrow */
+        .arrow-container {
+            cursor: pointer;
+        }
+    
+        #dropdown-arrow {
+            font-size: 24px;
+            color: #fff;
+            transition: transform 0.3s ease;
+        }
+    
+        /* Phone number container on the right */
+        .phone-number-container {
+            display: flex;
+            justify-content: flex-end;
+            flex: 1;
+        }
+    
+        #phone-number {
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 30px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            outline: none;
+            transition: box-shadow 0.3s ease;
+        }
+    
+        #phone-number:focus {
+            box-shadow: 0 2px 5px rgba(63, 114, 175, 0.7);
+        }
+    
+        /* Provider logos dropdown container */
+        .provider-logos {
+            display: none;
+            padding-top: 20px;
+            text-align: center;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+    
+        .logo-container img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+    
+        .logo-container img:hover {
+            transform: scale(1.1);
+        }
+    
+        /* Body container for network provider categories */
+        .body-container {
+            padding: 40px 20px;
+            background-color: #ffffff;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+    
+        .network-provider-section {
+            display: none;
+        }
+    
+        .category-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+    
+        .category-item {
+            padding: 15px 20px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            font-weight: 600;
+        }
+    
+        .category-item:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+    
+        /* Modernized Selectable Bundle Card */
+.bundle-card {
+    padding: 24px;
+    background: linear-gradient(135deg, #0066cc, #3399ff);
+    color: white;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin: 15px;
+    text-align: center;
+    box-shadow: 0 8px 16px rgba(0, 102, 204, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.bundle-card::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+    transform: rotate(25deg);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+
+.bundle-card:hover::after {
+    opacity: 1;
+}
+
+.bundle-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 12px 24px rgba(0, 102, 204, 0.3);
+}
+
+.bundle-card h4 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.bundle-card p {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.bundle-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 20px;
+    justify-items: center;
+}
+
+@media (max-width: 992px) {
+    .bundle-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .bundle-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+    
+        .bundle-card:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+    
+        /* Selected network name */
+        #selected-network {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+    
+        /* Select Network Style */
+        #select-network-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+    
+        #select-network-container select {
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 30px;
+            background-color: #f4f4f9;
+            transition: border-color 0.3s ease;
+        }
+    
+        #select-network-container select:hover {
+            border-color: #007BFF;
+        }
+    
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .hero-bar-content {
+                flex-direction: column;
+                text-align: center;
+            }
+    
+            .phone-number-container {
+                margin-top: 10px;
+            }
+    
+            .category-list {
+                flex-direction: column;
+                align-items: center;
+            }
+    
+            .category-item {
+                width: 80%;
+                text-align: center;
+            }
+    
+            .logo-container {
+                gap: 10px;
+            }
+    
+            .bundle-card {
+                width: 90%;
+                margin: 10px 0;
+            }
+    
+            #selected-network {
+                font-size: 16px;
+            }
+    
+            #select-network-container {
+                flex-direction: column;
+                align-items: center;
+            }
+    
+            #select-network-container select {
+                width: 100%;
+            }
+        }
+    
+        /* Hover and transition effects */
+        .category-item, .bundle-card {
+            transition: transform 0.3s ease-in-out, background-color 0.3s ease;
+        }
+
+        .go-back-btn {
+    display: inline-block;
+    background-color: #007bff;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    margin: 1rem 0;
+    transition: background 0.3s ease;
+}
+
+.go-back-btn:hover {
+    background-color: #0056b3;
+}
+
+    </style>
+    
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            const selectedOption = document.getElementById('selected-option');
+            const customOptions = document.getElementById('custom-options');
+            const phoneInput = document.getElementById('phone-number');
+            const networkSelect = document.getElementById('network-select');
+            const dropdownArrow = document.getElementById('dropdown-arrow');
+            const bundleContainer = document.getElementById("bundle-container");
+            const categorySelect = document.getElementById("bundle-category");
+    
+            const sections = {
+                airtel: document.getElementById('airtel-section'),
+                mtn: document.getElementById('mtn-section'),
+                glo: document.getElementById('glo-section'),
+                ninemobile: document.getElementById('ninemobile-section'),
+            };
+    
             const bundles = {
                 mtn: {
                     hot: ["1GB 1 Day N500", "2.5GB 2 Days N900", "500MB 7 Days N500", "1GB 7 Days N800", "2GB 30 Days N1,500", "3.5GB 30 Days N2,500"],
@@ -281,6 +391,7 @@
                     daily: ["45MB 1 Day N50", "105MB 1 Day N100", "350MB 1 Day N60", "750MB 1 Day N120"],
                     weekend: ["2.5GB 2 Days N500", "875MB 2 Days N200"],
                     weekly: ["1.5GB 7 Days N500", "500MB 17 Days N250", "1.1GB 14 Days N7500", "8.5GB 7 Days N2,000", "20.5GB 7 Days N5,000"],
+                    monthly: ["1GB 21 Days N450", "2GB 21 Days N800", "2.6GB 30 Days N1,000", "3GB 30 Days N1,200", "5GB 30 Days N2,000", "6.15GB 30 Days N2,000", "7.25GB 30 Days N2,500", "10GB 30 Days N3000", "12.5GB 30 Days N4,000", "16GB 30 Days N5,000", "20.5GB 30 Days N6,000", "28GB 30 Days N8,000", "38GB 30 Days N10,000", "64GB 30 Days N15,000", "107GB 30 Days N20,000"],
                     mega: ["135GB 30 Days N25,000", "165GB 30 Days N30,000", "220GB 30 Days N40,000", "310GB 60 Days N50,000", "355GB 90 Days N60,000", "475GB 90 Days N75,000", "1000GB 365 Days N150,000"],
                     social: ["135MB 3 Days N50", "335GB 7 Days N100", "1.1GB 10 Days N300", "1.8GB 15 Days N500"],
                     tv: ["500MB 3 Days N150", "2GB 7 Days N450", "6GB 30 Days N1,400", "2GB 7 Days N900", "6GB 30 Days N3,200"],
@@ -288,7 +399,7 @@
                     hourly: ["500MB N200", "1GB N300"],
                     special: ["1GB 1 Day N350", "2GB 1 Day N500", "3.55GB 2 Days N600", "5.1GB 2 Days N1,000", "5.9GB 7 Days N1,500"]
                 },
-                "nine-mobile": {
+                ninemobile: {
                     hot: ["650MB 1 Day N200", "1GB 1 Day N300", "2GB 3 Days N500", "100MB 1 Day N100", "6.2GB 30 Days N1,200", "7GB 7 Days N1,500", "50MB 1 Day N50", "4GB 30 Days N1,000", "9.5GB 30 Days N2,000"],
                     daily: ["50MB 1 Day N50", "100MB 1 Days N300", "200MB 1 Day N150", "650MB 1 Days N200", "1GB 1 Days N300", "2GB 3 Days N500"],
                     weekly: ["1GB 7 Days N1,500"],
@@ -296,88 +407,156 @@
                 }
             };
     
-            const networkSelect = document.getElementById('network-select');
-        const phoneInput = document.getElementById('phone-number');
-        const dropdownArrow = document.getElementById('dropdown-arrow');
-
-        function populateCategories(network) {
-            const categories = Object.keys(bundles[network]);
-            const categoryContainer = document.getElementById(`${network}-categories`);
-            categoryContainer.innerHTML = "";
-
-            categories.forEach(category => {
-                const item = document.createElement('div');
-                item.classList.add('category-item');
-                item.setAttribute('data-category', category);
-                item.innerText = category.charAt(0).toUpperCase() + category.slice(1);
-                categoryContainer.appendChild(item);
-            });
-
-            if (categories.length > 0) {
-                renderBundles(network, categories[0], bundles[network][categories[0]]);
-            }
-        }
-
-        function renderBundles(provider, category, bundleArray) {
-            const section = document.getElementById(`${provider}-bundles`);
-            section.innerHTML = ''; 
-
-            const cardContainer = document.createElement('div');
-            cardContainer.className = 'bundle-card-container';
-
-            bundleArray.forEach(bundle => {
-                const card = document.createElement('div');
-                card.className = 'bundle-card';
-                card.innerText = bundle;
-                card.dataset.bundle = bundle;
-                card.dataset.provider = provider;
-
-                card.addEventListener('click', () => {
-                    const phone = phoneInput.value.trim();
-                    if (!/^\d{11}$/.test(phone)) {
-                        alert('Please enter a valid 11-digit phone number.');
-                        return;
-                    }
-
-                    // Send data to backend (e.g., fetch/POST)
-                    console.log(`Purchasing ${bundle} for ${phone} on ${provider}`);
+            function populateCategories(network) {
+                const categories = Object.keys(bundles[network]);
+                const categoryContainer = document.getElementById(`${network}-categories`);
+                categoryContainer.innerHTML = "";
+    
+                categories.forEach(category => {
+                    const item = document.createElement('div');
+                    item.classList.add('category-item');
+                    item.setAttribute('data-category', category);
+                    item.innerText = category.charAt(0).toUpperCase() + category.slice(1);
+                    categoryContainer.appendChild(item);
                 });
-
-                cardContainer.appendChild(card);
+    
+                if (categories.length > 0) {
+                    renderBundles(network, categories[0], bundles[network][categories[0]]);
+                }
+            }
+    
+            function renderBundles(provider, category, bundleArray) {
+                const section = document.getElementById(`${provider}-bundles`);
+                section.innerHTML = '';
+    
+                const cardContainer = document.createElement('div');
+                cardContainer.className = 'bundle-card-container';
+    
+                bundleArray.forEach(bundle => {
+                    const card = document.createElement('div');
+                    card.className = 'bundle-card';
+                    card.innerText = bundle;
+                    card.dataset.bundle = bundle;
+                    card.dataset.provider = provider;
+    
+                    card.addEventListener('click', () => {
+                        const phone = phoneInput.value.trim();
+                        if (!/^\d{11}$/.test(phone)) {
+                            alert('Please enter a valid 11-digit phone number.');
+                            return;
+                        }
+    
+                        console.log(`Purchasing ${bundle} for ${phone} on ${provider}`);
+                    });
+    
+                    cardContainer.appendChild(card);
+                });
+    
+                section.appendChild(cardContainer);
+            }
+    
+            function setupCategoryClickListener(network) {
+                const categoryContainer = document.getElementById(`${network}-categories`);
+                categoryContainer.addEventListener("click", function (e) {
+                    if (e.target.classList.contains("category-item")) {
+                        const category = e.target.getAttribute("data-category");
+                        renderBundles(network, category, bundles[network][category]);
+                    }
+                });
+            }
+    
+            networkSelect.addEventListener("change", function () {
+                const selected = this.value;
+                phoneInput.disabled = false;
+    
+                document.querySelectorAll(".network-provider-section").forEach(section => {
+                    section.style.display = "none";
+                });
+    
+                const sectionId = `${selected}-section`;
+                document.getElementById(sectionId).style.display = "block";
+    
+                populateCategories(selected);
+                setupCategoryClickListener(selected);
             });
-
-            section.appendChild(cardContainer);
-        }
-
-        function setupCategoryClickListener(network) {
-            const categoryContainer = document.getElementById(`${network}-categories`);
-            categoryContainer.addEventListener("click", function (e) {
-                if (e.target.classList.contains("category-item")) {
-                    const category = e.target.getAttribute("data-category");
-                    renderBundles(network, category, bundles[network][category]);
+    
+            dropdownArrow?.addEventListener('click', () => {
+                networkSelect.focus();
+            });
+    
+            function displayBundles(network, category) {
+                bundleContainer.innerHTML = "";
+                const selectedBundles = bundles[network]?.[category] || [];
+    
+                selectedBundles.forEach(bundle => {
+                    const bundleDiv = document.createElement("div");
+                    bundleDiv.classList.add("bundle");
+                    bundleDiv.textContent = bundle;
+                    bundleDiv.addEventListener("click", function () {
+                        handleBundleSelection(bundle, network);
+                    });
+                    bundleContainer.appendChild(bundleDiv);
+                });
+            }
+    
+            function handleBundleSelection(bundle, network) {
+                const [data, price] = bundle.split(" N");
+                alert(`You selected: ${bundle}. Proceeding to payment gateway.`);
+    
+                const paymentDetails = {
+                    bundleName: bundle,
+                    network: network,
+                    price: price,
+                    phoneNumber: phoneInput.value
+                };
+    
+                processPayment(paymentDetails);
+            }
+    
+            function processPayment(paymentDetails) {
+                fetch("https://api.vtpass.com/pay", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(paymentDetails)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        alert("Payment successful! Your transaction ID is " + data.transaction_id);
+                    } else {
+                        alert("Payment failed. Please try again.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error during payment:", error);
+                    alert("An error occurred. Please try again later.");
+                });
+            }
+    
+            // Custom Dropdown Logic
+            selectedOption?.addEventListener("click", function () {
+                if (customOptions) {
+                    customOptions.style.display = customOptions.style.display === "none" ? "block" : "none";
                 }
             });
-        }
-
-        networkSelect.addEventListener("change", function () {
-            const selected = this.value;
-            phoneInput.disabled = false;
-
-            document.querySelectorAll(".network-provider-section").forEach(section => {
-                section.style.display = "none";
-            });
-
-            const sectionId = `${selected}-section`;
-            document.getElementById(sectionId).style.display = "block";
-
-            populateCategories(selected);
-            setupCategoryClickListener(selected);
-        });
-
-        dropdownArrow.addEventListener('click', () => {
-            networkSelect.focus();
-        });
-    });
-    </script>
     
-{% endblock %}
+            customOptions?.addEventListener("click", function (event) {
+                const network = event.target.getAttribute("data-value");
+                if (network) {
+                    selectedOption.querySelector('span').textContent = network.toUpperCase();
+                    phoneInput.disabled = false;
+                    phoneInput.placeholder = `Enter ${network.toUpperCase()} number`;
+    
+                    Object.keys(sections).forEach(key => {
+                        sections[key].style.display = key === network ? "block" : "none";
+                    });
+    
+                    displayBundles(network, "hot");
+                }
+                customOptions.style.display = "none";
+            });
+        });
+    </script>
+    {% endblock %}

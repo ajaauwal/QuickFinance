@@ -30,7 +30,7 @@ urlpatterns = [
     path('__debug__/', include('debug_toolbar.urls')),
 
     # Include app-specific URLs
-    path('accounts/', include('apps.accounts.urls')),  # Includes the accounts app URLs
+    path('accounts/', include('apps.accounts.urls')),  # Accounts app URLs
     path('services/', include('apps.services.urls')),  # Services app URLs
     path('transactions/', include('apps.transactions.urls')),  # Transactions app URLs
     path('notifications/', include('apps.notifications.urls')),  # Notifications app URLs

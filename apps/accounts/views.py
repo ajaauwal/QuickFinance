@@ -2,13 +2,11 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
-from django.contrib.auth.views import (
-    PasswordResetView, PasswordResetDoneView, PasswordResetCompleteView
-)
+from django.contrib.auth.views import PasswordResetView, PasswordResetDoneView, PasswordResetCompleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse_lazy
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
 from django.core.mail import send_mail
@@ -17,13 +15,11 @@ from django.views import View
 from django.http import JsonResponse, HttpResponse
 from django.conf import settings
 import logging
-
 from .forms import SignUpForm, InviteFriendForm, HelpRequestForm
 from apps.transactions.models import Wallet, Transaction
 from allauth.socialaccount.providers import registry
-from allauth.socialaccount.models import SocialAccount, SocialLogin
+from allauth.socialaccount.models import SocialLogin
 from social_django.utils import load_strategy
-from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.socialaccount.helpers import complete_social_login
 
 # Set up logging
@@ -35,7 +31,7 @@ User = get_user_model()
 class IndexView(LoginRequiredMixin, View):
     def get(self, request):
         wallet = Wallet.objects.filter(user=request.user).first()
-        transactions = Transaction.objects.filter(user=request.user).order_by('-date_created')[:5]
+        transactions = Transaction.objects.filter(user=request.user).order_by('-created_at')[:5]
 
 
         context = {
@@ -104,7 +100,7 @@ class CustomLoginView(View):
             user = form.get_user()
             login(request, user)
             messages.success(request, 'Logged in successfully!')
-            return redirect(request.GET.get('next', reverse('accounts:index')))
+            return redirect(request.GET.get('next', reverse_lazy('accounts:index')))
         messages.error(request, 'Invalid login credentials.')
         return render(request, 'accounts/login.html', {'form': form})
 
@@ -124,7 +120,7 @@ class CustomLogoutView(View):
     def get(self, request):
         logout(request)
         messages.success(request, 'You have been logged out successfully.')
-        return redirect(request.GET.get('next', reverse('accounts:index')))
+        return redirect(request.GET.get('next', reverse_lazy('accounts:index')))
 
 
 # --------------------- Miscellaneous Views ---------------------

@@ -1,65 +1,89 @@
 from django.contrib import admin
-from .models import (
-    Profile, ServiceType, Bank, UserBank, Wallet, Transfer,
-    PaystackTransaction, Transaction, DebitCard, Payment, TransferRecipient
-)
+from .models import Transaction, Payment, Wallet, Profile, ServiceType, Bank, TransferRecipient, Transfer
 
-@admin.register(Profile)
-class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'phone_number', 'gender', 'created_at')
-    search_fields = ('user__username', 'phone_number')
 
-@admin.register(ServiceType)
-class ServiceTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'created_at')
-    search_fields = ('name',)
-
-@admin.register(Bank)
-class BankAdmin(admin.ModelAdmin):
-    list_display = ('name', 'code')
-    search_fields = ('name', 'code')
-
-@admin.register(UserBank)
-class UserBankAdmin(admin.ModelAdmin):
-    list_display = ('user', 'bank', 'account_number')
-    search_fields = ('user__username', 'account_number')
-
-@admin.register(Wallet)
-class WalletAdmin(admin.ModelAdmin):
-    list_display = ('user', 'balance', 'created_at')
-    search_fields = ('user__username',)
-
-@admin.register(Transfer)
-class TransferAdmin(admin.ModelAdmin):
-    list_display = ('sender_wallet', 'recipient_wallet', 'amount', 'status', 'transfer_date')
-    search_fields = ('sender_wallet__user__username', 'recipient_wallet__user__username', 'transaction_reference')
-    list_filter = ('status', 'transfer_date')
-
-@admin.register(PaystackTransaction)
-class PaystackTransactionAdmin(admin.ModelAdmin):
-    list_display = ('reference', 'status', 'amount', 'created_at')
-    search_fields = ('reference',)
-    list_filter = ('status', 'created_at')
-
+# Admin for Transaction
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'service', 'amount', 'payment_method', 'date_created')
-    search_fields = ('user__username', 'service__name')
-    list_filter = ('payment_method', 'date_created')
+    list_display = ('transaction_id', 'status', 'amount', 'created_at')  # Updated to valid fields
+    list_filter = ('status',)  # Adjusted filter for valid fields
+    search_fields = ('transaction_id', 'status')  # Updated to valid fields
+    ordering = ('-created_at',)  # Order by valid field
 
-@admin.register(DebitCard)
-class DebitCardAdmin(admin.ModelAdmin):
-    list_display = ('user', 'card_number', 'expiry_date', 'is_active')
-    search_fields = ('user__username', 'card_number')
-    list_filter = ('is_active', 'expiry_date')
 
+# Admin for Payment
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'amount', 'status', 'created_at')
-    search_fields = ('user__username',)
-    list_filter = ('status', 'created_at')
+    list_display = ('id', 'user', 'amount', 'payment_method', 'date')  # Adjusted to actual field names
+    search_fields = ('id', 'payment_method')
+    ordering = ('-date',)  # Ordering by actual 'date' field
 
+
+# Admin for Wallet
+@admin.register(Wallet)
+class WalletAdmin(admin.ModelAdmin):
+    list_display = ('get_user_email', 'balance', 'created_at')  # Show user email, balance, and created_at
+    search_fields = ('user__email', 'user__username')
+    ordering = ('-balance',)
+
+    def get_user_email(self, obj):
+        return obj.user.email  # Display the user's email
+    get_user_email.short_description = 'User Email'
+
+
+# Admin for Profile
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'get_first_name', 'get_last_name', 'wallet_balance', 'created_at')  # Added 'created_at'
+    search_fields = ('user__email', 'user__first_name', 'user__last_name')
+    ordering = ('user__email',)
+
+    def wallet_balance(self, obj):
+        return obj.wallet.balance if hasattr(obj, 'wallet') else "N/A"
+    wallet_balance.short_description = 'Wallet Balance'
+
+    def get_first_name(self, obj):
+        return obj.user.first_name  # Display the user's first name
+    get_first_name.short_description = 'First Name'
+
+    def get_last_name(self, obj):
+        return obj.user.last_name  # Display the user's last name
+    get_last_name.short_description = 'Last Name'
+
+
+# Admin for ServiceType
+@admin.register(ServiceType)
+class ServiceTypeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'description', 'created_at']
+
+
+# Admin for Bank
+@admin.register(Bank)
+class BankAdmin(admin.ModelAdmin):
+    list_display = ['name', 'code']  # Removed created_at if not present
+
+
+# Admin for TransferRecipient
 @admin.register(TransferRecipient)
 class TransferRecipientAdmin(admin.ModelAdmin):
-    list_display = ('user', 'recipient_name', 'bank_name', 'account_number')
-    search_fields = ('user__username', 'recipient_name', 'bank_name', 'account_number')
+    list_display = ('id', 'user', 'bank', 'account_number', 'account_name')  # Adjusted based on model fields
+    list_filter = ('bank',)  # Adjusted to use the 'bank' field
+    search_fields = ('user__username', 'account_number')
+    ordering = ('-created_at',)
+
+
+# Admin for Transfer
+@admin.register(Transfer)
+class TransferAdmin(admin.ModelAdmin):
+    list_display = ('id', 'sender_wallet', 'recipient_wallet', 'amount', 'transaction_reference', 'transfer_date', 'status')  # Adjusted to valid fields
+    list_filter = ('status',)  # Added filter by status
+    search_fields = ('transaction_reference', 'sender_wallet__user__username', 'recipient_wallet__user__username')  # Updated to valid fields
+    ordering = ('-transfer_date',)  # Ordering by transfer_date instead of timestamp
+
+    def get_user_email(self, obj):
+        return obj.sender_wallet.user.email  # Display the sender's email
+    get_user_email.short_description = 'Sender Email'
+
+    def get_recipient_name(self, obj):
+        return obj.recipient_wallet.user.first_name  # Display the recipient's first name
+    get_recipient_name.short_description = 'Recipient Name'

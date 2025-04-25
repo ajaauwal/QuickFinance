@@ -21,32 +21,42 @@ from .helpers import update_transaction_status
 
 
 
-logger = logging.getLogger(__name__)
-
 # Use the custom user model
 User = get_user_model()
 
 
-def update_user_wallet_balance(transaction: Any) -> None:
+from typing import Any
+from .models import Wallet
+import logging
+
+logger = logging.getLogger(__name__)
+
+def update_user_wallet_balance(wallet: Wallet, amount: Decimal, action: str) -> None:
     """
-    Update the wallet balance for the user based on the transaction amount and status.
+    Update the wallet balance for the user based on the transaction amount and action.
     """
     try:
-        user_wallet = Wallet.objects.filter(profile=transaction.user.profile).first()
+        # Ensure we are updating the correct user's wallet
+        if wallet:
+            if action == 'credit':
+                wallet.balance += amount
+            elif action == 'debit':
+                wallet.balance -= amount
+            else:
+                logger.warning(f"Unrecognized action {action} for user {wallet.user.username}.")
+                return  # Do nothing if action is unrecognized
 
-        if user_wallet:
-            if transaction.status == "Completed":
-                user_wallet.balance += transaction.amount
-            elif transaction.status == "Failed":
-                logger.warning(f"Transaction {transaction.transaction_id} failed for user {transaction.user.username}.")
+            # Save the updated wallet balance
+            wallet.save()
 
-            user_wallet.save()
-            logger.info(f"Updated wallet balance for {transaction.user.username} to {user_wallet.balance}")
+            logger.info(f"Updated wallet balance for {wallet.user.username} to ₦{wallet.balance}")
         else:
-            logger.warning(f"Wallet not found for user {transaction.user.username}")
+            logger.warning(f"Wallet not found for user {wallet.user.username}")
+
     except Exception as e:
-        logger.error(f"Error updating wallet balance for user {transaction.user.username}: {e}")
-        raise
+        # Log any error encountered
+        logger.error(f"Error updating wallet balance for user {wallet.user.username}: {e}")
+        raise  # Re-raise the error after logging it for further handling if needed
 
 
 def create_transaction(user, service, amount, transaction_type="Payment", status="Pending"):
