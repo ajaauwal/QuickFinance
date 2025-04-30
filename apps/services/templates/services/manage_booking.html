@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manage Booking | FlyAway</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .manage-container {
+      max-width: 600px;
+      margin: 100px auto;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+    }
+
+    .manage-container h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"],
+    input[type="email"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .booking-details {
+      margin-top: 30px;
+      background: #f7f7f7;
+      padding: 20px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .booking-details h3 {
+      margin-bottom: 10px;
+    }
+
+    .booking-details p {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="manage-container">
+  <h2>Manage Your Booking</h2>
+  <form id="manage-booking-form">
+    <div class="form-group">
+      <label for="booking_reference">Booking Reference</label>
+      <input type="text" id="booking_reference" name="booking_reference" placeholder="Enter Booking Reference" required>
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email Address</label>
+      <input type="email" id="email" name="email" placeholder="Enter your Email" required>
+    </div>
+
+    <button type="submit"><i class="fas fa-search"></i> Retrieve Booking</button>
+  </form>
+
+  <div class="booking-details" id="booking-details">
+    <h3>Booking Details</h3>
+    <p><strong>Flight:</strong> JFK → LHR</p>
+    <p><strong>Departure:</strong> 2025-06-15 08:00 AM</p>
+    <p><strong>Passengers:</strong> 2 Adults</p>
+    <p><strong>Status:</strong> Confirmed</p>
+    <button style="background-color: #dc3545; margin-top: 10px;"><i class="fas fa-times"></i> Cancel Booking</button>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById('manage-booking-form');
+const bookingDetails = document.getElementById('booking-details');
+
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  // Simulate retrieval of booking details
+  bookingDetails.style.display = 'block';
+});
+</script>
+
+</body>
+</html>
+
+{% endblock %}

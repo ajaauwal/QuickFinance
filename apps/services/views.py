@@ -9,21 +9,14 @@ from dotenv import load_dotenv
 
 # Forms
 from .forms import (
-    AirtimeRechargeForm,
     DataTopUpForm,
     SchoolFeesPaymentForm,
-    FlightBookingForm,
-    LoanApplicationForm,
     UtilityBillsForm,
-    FlightPaymentForm,
-    RescheduleFlightForm,
-    CancelFlightForm,
-    FlightResultsForm,
-    WAECResultCheckerForm,
+    WaecResultCheckForm,
+    
 )
 
 # Models
-from .models import FlightBooking, Service
 from apps.transactions.models import Wallet, Transaction
 
 # Integrations
@@ -82,130 +75,69 @@ NETWORK_PROVIDERS = [
     {'value': 'glo', 'name': 'Glo', 'logo': 'images/glo.png'},
 ]
 
-AIRTIME_CATEGORIES = {
-    'mtn': [
-        {'category': 'MTN 100', 'amount': 100},
-        {'category': 'MTN 200', 'amount': 200},
-        {'category': 'MTN 500', 'amount': 500},
-    ],
-    'airtel': [
-        {'category': 'Airtel 100', 'amount': 100},
-        {'category': 'Airtel 200', 'amount': 200},
-        {'category': 'Airtel 500', 'amount': 500},
-    ],
-    '9mobile': [
-        {'category': '9Mobile 100', 'amount': 100},
-        {'category': '9Mobile 200', 'amount': 200},
-        {'category': '9Mobile 500', 'amount': 500},
-    ],
-    'glo': [
-        {'category': 'Glo 100', 'amount': 100},
-        {'category': 'Glo 200', 'amount': 200},
-        {'category': 'Glo 500', 'amount': 500},
-    ],
-}
+import json
+import requests
+from django.conf import settings
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 
+# Use environment variables for VTpass API details
+VTPASS_BASE_URL = settings.VTPASS_BASE_URL
+VTPASS_PUBLIC_KEY = settings.VTPASS_PUBLIC_KEY
+VTPASS_SECRET_KEY = settings.VTPASS_SECRET_KEY
 
-class PurchaseAirtimeView(View):
-    def get(self, request):
-        """Handles GET requests for the airtime purchase page."""
-        form = AirtimeRechargeForm()
-        network_provider = request.GET.get('network_provider', 'mtn')  # Default to 'mtn'
-        categories = AIRTIME_CATEGORIES.get(network_provider, [])
-        
-        # Fetch wallet and transactions for authenticated users
-        wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None
-        transactions = Transaction.objects.filter(user=request.user) if request.user.is_authenticated else []
+import requests
+import uuid
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.conf import settings
 
-        context = {
-            'form': form,
-            'wallet': wallet,
-            'wallet_currencies': [
-                {"currency": "NGN", "symbol": "₦", "balance": wallet.balance if wallet else 0}
-            ] if wallet else [],
-            'transactions': transactions,
-            'categories': categories,
-            'network_provider': network_provider,
-            'network_providers': NETWORK_PROVIDERS,
+@csrf_exempt
+def purchase_airtime(request):
+    if request.method == "POST":
+        network_provider = request.POST.get('network_provider')
+        amount = request.POST.get('amount')
+        phone_number = request.POST.get('phone_number')
+
+        # Create a unique request ID
+        request_id = str(uuid.uuid4())
+
+        payload = {
+            "request_id": request_id,
+            "serviceID": network_provider,
+            "billersCode": phone_number,
+            "variation_code": "",
+            "amount": amount,
+            "phone": phone_number
         }
 
-        return render(request, 'services/purchase_airtime.html', context)
-
-    def post(self, request):
-        """Handles POST requests for processing airtime purchase."""
-        form = AirtimeRechargeForm(request.POST)
-        if form.is_valid():
-            data = form.cleaned_data
-            network_provider = data['network_provider']
-            amount = data['amount']
-            phone_number = data['phone_number']
-            payment_method = data['payment_method']
-
-            if payment_method == 'wallet':
-                return self._process_wallet_payment(request, amount, form)
-            elif payment_method == 'debit_card':
-                return self._process_debit_card_payment(request, network_provider, phone_number, amount)
-
-        # Handle invalid form submission
-        network_provider = request.POST.get('network_provider', 'mtn')
-        categories = AIRTIME_CATEGORIES.get(network_provider, [])
-        context = {
-            'form': form,
-            'categories': categories,
-            'network_provider': network_provider,
-            'network_providers': NETWORK_PROVIDERS,
+        headers = {
+            "Content-Type": "application/json"
         }
-        return render(request, 'services/purchase_airtime.html', context)
 
-    def _process_wallet_payment(self, request, amount, form):
-        """Processes payment using wallet balance."""
-        wallet = get_object_or_404(Wallet, user=request.user)
-        if wallet.balance >= amount:
-            wallet.balance -= amount
-            wallet.save()
+        # VTpass Authentication
+        username = settings.VTPASS_USERNAME  # your vtpass email
+        password = settings.VTPASS_PASSWORD  # your vtpass api key
 
-            # Save the form with user association
-            airtime_purchase = form.save(commit=False)
-            airtime_purchase.user = request.user
-            airtime_purchase.save()
-
-            # Record the transaction
-            Transaction.objects.create(
-                user=request.user,
-                service="Airtime Purchase",
-                amount=amount,
-                payment_method='wallet',
-                wallet=wallet
-            )
-            messages.success(request, "Airtime purchase successful via wallet.")
-        else:
-            messages.error(request, "Insufficient wallet balance.")
-        return redirect('services:purchase_airtime')
-
-    def _process_debit_card_payment(self, request, network_provider, phone_number, amount):
-        """Processes payment using debit card via VTPass API."""
-        vtpass = VTPassAPI()  # Instantiate the VTPass SDK
-        
-        response = vtpass.purchase_airtime(
-            provider=network_provider,
-            number=phone_number,
-            amount=amount,
-            reference="unique_transaction_reference"
+        response = requests.post(
+            "https://vtpass.com/api/pay",
+            json=payload,
+            headers=headers,
+            auth=(username, password)
         )
-        
-        if response.get('status') == 'success':
-            # Record the transaction
-            Transaction.objects.create(
-                user=request.user,
-                service="Airtime Purchase",
-                amount=amount,
-                payment_method='debit_card'
-            )
-            messages.success(request, "Airtime purchase successful via debit card.")
+
+        if response.status_code == 200:
+            vtpass_response = response.json()
+            if vtpass_response.get('code') == "000":  # successful
+                return JsonResponse({"status": "success", "message": "Airtime purchased successfully"})
+            else:
+                return JsonResponse({"status": "failed", "message": vtpass_response.get('response_description', 'Error processing request')})
         else:
-            error_message = response.get('message', "Error processing debit card payment.")
-            messages.error(request, error_message)
-        return redirect('services:purchase_airtime')
+            return JsonResponse({"status": "failed", "message": "VTpass API error"})
+
+    return JsonResponse({"status": "failed", "message": "Invalid request method"})
+
 
 
 class DataTopUpView(View):
@@ -283,263 +215,299 @@ class DataTopUpView(View):
 
 
 
-class FlightBookingView(View):
-    def get(self, request):
-        form = FlightBookingForm()
-        
-        # Fetch the user's wallet and transactions if authenticated
-        wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None
-        transactions = Transaction.objects.filter(user=request.user)  # Filter by user
-        
-        # Context for rendering the page
-        context = {
-            'form': form,
-            'wallet': wallet,
-            'wallet_currencies': [
-                {"currency": "NGN", "symbol": "₦", "balance": wallet.balance if wallet else 0}
-            ] if wallet else [],
-            'transactions': transactions,
-            }
-        return render(request, 'services/flight_booking.html', context)
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils.crypto import get_random_string
+from .models import Flight, Booking, FlightSearch
+from .paystack import PaystackAPI  # Ensure your Paystack integration exists
+from django.http import JsonResponse, Http404
+import requests
+from amadeus import Client, ResponseError
+from django.conf import settings
 
-    def post(self, request):
-        form = FlightBookingForm(request.POST)
-        if form.is_valid():
-            data = form.cleaned_data
-            origin = data['departure_city']
-            destination = data['arrival_city']
-            departure_date = data['departure_date']
-            return_date = data['return_date']
-            adults = data['number_of_passengers']
-            children = data.get('children', 0)
-            infants = data.get('infants', 0)
-
-            # Using the AmadeusService for flight search
-            amadeus_service = AmadeusService()
-            flights = amadeus_service.search_flights(
-                origin=origin,
-                destination=destination,
-                departure_date=departure_date,
-                return_date=return_date,
-                adults=adults,
-                children=children,
-                infants=infants
-            )
-
-            if flights:
-                return render(request, 'services/flight_results.html', {'flights': flights})
-            else:
-                return JsonResponse({"error": "No flights found"}, status=400)
-        
-        return render(request, 'services/flight_booking.html', {'form': form})
-
-class FlightPaymentView(View):
-    def post(self, request):
-        form = FlightPaymentForm(request.POST)
-        if form.is_valid():
-            flight_id = form.cleaned_data['flight_id']
-            amount = form.cleaned_data['amount']
-            payment_method = form.cleaned_data['payment_method']
-            user = request.user
-
-            if payment_method == 'wallet':
-                wallet = Wallet.objects.get(user=user)
-                if wallet.balance >= amount:
-                    wallet.balance -= amount
-                    wallet.save()
-                    # Save the flight booking to the database
-                    return redirect('services:flight_booked')
-                else:
-                    return JsonResponse({"error": "Insufficient wallet balance"}, status=400)
-            elif payment_method == 'debit_card':
-                paystack = PaystackAPI()
-                response = paystack.initialize_transaction(
-                    reference="unique_transaction_reference",
-                    amount=amount,
-                    email=user.email,
-                    callback_url="https://maaunquickfinance.com/paystack/callback",
-                    metadata={"user_id": user.id}
-                )
-                if response.get('status'):
-                    return redirect(response['data']['authorization_url'])
-                else:
-                    return JsonResponse({"error": response.get('message', 'Error processing payment')}, status=400)
-        
-        return redirect('services:flight_results')
-
-class RescheduleFlightView(View):
-    def post(self, request):
-        form = RescheduleFlightForm(request.POST)
-        if form.is_valid():
-            flight_id = form.cleaned_data['flight_id']
-            new_date = form.cleaned_data['new_date']
-            # Process rescheduling
-            return redirect('services:flight_results')
-        return redirect('services:flight_results')
-
-class CancelFlightView(View):
-    def post(self, request):
-        form = CancelFlightForm(request.POST)
-        if form.is_valid():
-            flight_id = form.cleaned_data['flight_id']
-            cancel_reason = form.cleaned_data['cancel_reason']
-            # Process cancellation
-            return redirect('services:flight_cancelled')
-        return redirect('services:flight_results')
-
-class FlightBookedView(View):
-    def get(self, request):
-        return render(request, 'services/flight_booked.html')
-
-class FlightCancelledView(View):
-    def get(self, request):
-        return render(request, 'services/flight_cancelled.html')
-
-class FlightResultsView(View):
-    def get(self, request):
-        form = FlightResultsForm()
-        return render(request, 'services/flight_results.html')
-
-    def post(self, request):
-        form = FlightResultsForm(request.POST)
-        if form.is_valid():
-            flight_id = form.cleaned_data['flight_id']
-            amount = form.cleaned_data['amount']
-            payment_method = form.cleaned_data['payment_method']
-            new_date = form.cleaned_data['new_date']
-            cancel_reason = form.cleaned_data['cancel_reason']
-            booking_reference = form.cleaned_data['booking_reference']
-            user = request.user
-
-            if payment_method == 'wallet':
-                wallet = Wallet.objects.get(user=user)
-                if wallet.balance >= amount:
-                    wallet.balance -= amount
-                    wallet.save()
-                    # Save the flight booking to the database
-                    return redirect('services:flight_booked')
-                else:
-                    return JsonResponse({"error": "Insufficient wallet balance"}, status=400)
-            elif payment_method == 'debit_card':
-                paystack = PaystackAPI()
-                response = paystack.initialize_transaction(
-                    reference="unique_transaction_reference",
-                    amount=amount,
-                    email=user.email,
-                    callback_url="https://maaunquickfinance.com/paystack/callback",
-                    metadata={"user_id": user.id}
-                )
-                if response.get('status'):
-                    return redirect(response['data']['authorization_url'])
-                else:
-                    return JsonResponse({"error": response.get('message', 'Error processing payment')}, status=400)
-            elif new_date:
-                # Process rescheduling
-                flight = get_object_or_404(FlightBooking, flight_id=flight_id)
-                flight.new_date = new_date
-                flight.save()
-                return redirect('services:flight_results')
-            elif cancel_reason:
-                # Process cancellation
-                flight = get_object_or_404(FlightBooking, flight_id=flight_id)
-                flight.cancel_reason = cancel_reason
-                flight.status = 'Cancelled'
-                flight.save()
-                return redirect('services:flight_cancelled')
-        
-        return redirect('services:flight_results')
-
-class FlightDetailView(View):
-    def get(self, request, flight_id):
-        flight = get_object_or_404(FlightBooking, flight_id=flight_id)
-        data = {
-            'flight_id': flight.flight_id,
-            'amount': flight.amount,
-            'payment_method': flight.payment_method,
-            'status': flight.status,
-            'booking_date': flight.booking_date,
-            'cancel_reason': flight.cancel_reason,
-            'new_date': flight.new_date,
-            'booking_reference': flight.booking_reference,
-        }
-        return JsonResponse(data)
-
-class AmadeusService:
-    def search_flights(self, origin, destination, departure_date, return_date, adults, children, infants):
-        # Placeholder logic for searching flights
-        return [
-            {'flight_number': 'AA123', 'origin': origin, 'destination': destination, 'departure_date': departure_date, 'return_date': return_date, 'price': 500},
-            {'flight_number': 'BA456', 'origin': origin, 'destination': destination, 'departure_date': departure_date, 'return_date': return_date, 'price': 600},
-        ]
-
-    def destination_experiences(self, point_of_interest, tours_and_activities, city_search):
-        """ Fetch destination experiences for a given city code. """
-        return [
-            {'title': 'Statue of Liberty Tour', 'description': 'Visit the iconic Statue of Liberty.', 'price': 25},
-            {'title': 'Broadway Show', 'description': 'Enjoy a world-class Broadway show.', 'price': 100},
-        ]
-
-    def cars_transfers(self, transfer_booking, transfer_management, transfer_search):
-        """ Fetch available car transfers. """
-        return [
-            {'car': 'Sedan', 'price': 50, 'availability': 'Available'},
-            {'car': 'SUV', 'price': 80, 'availability': 'Available'},
-            {'car': 'Luxury', 'price': 150, 'availability': 'Limited'},
-        ]
-
-    def market_insights(self, flight_most_travelled_destinations, flight_most_booked_destinantions, flight_busiest_travelling_period, location_store):
-        """ Fetch market insights. """
-        return {
-            'top_destinations': ['New York', 'Paris', 'Tokyo'],
-            'average_flight_cost': 500,
-            'peak_season': 'Summer',
-        }
-
-    def hotels(self, hotel_list, hotel_search, hotel_booking, hotel_ratings, hotel_name_autocomplete):
-        """ Fetch available hotels. """
-        return [
-            {'name': 'Grand Hotel', 'location': 'Downtown NYC', 'price': 200, 'rating': 4.5},
-            {'name': 'Budget Inn', 'location': 'Brooklyn', 'price': 80, 'rating': 3.8},
-            {'name': 'Luxury Suites', 'location': 'Midtown Manhattan', 'price': 500, 'rating': 5.0},
-        ]
-
-    def itinerary_management(self, trip_parser, trip_purpose_prediction):
-        """ Fetch itinerary details for management. """
-        return {
-            'flights': [{'departure': 'JFK', 'arrival': 'LAX', 'time': '10:00 AM'}],
-            'hotels': [{'name': 'Grand Hotel', 'check_in': '2024-01-10', 'check_out': '2024-01-15'}],
-            'activities': [{'title': 'City Tour', 'time': '2:00 PM'}],
-        }
+# Amadeus API client initialization
+amadeus = Client(
+    client_id=settings.AMADEUS_API_KEY,
+    client_secret=settings.AMADEUS_API_SECRET
+)
 
 
-def get_loan(request): 
-    wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None
-    transactions = Transaction.objects.filter(user=request.user) if request.user.is_authenticated else []
-    
+@login_required
+def flight_booking(request):
+    wallet = get_object_or_404(Wallet, user=request.user)
+    transactions = Transaction.objects.filter(user=request.user)
+
+    categories = [
+        {
+            'name': 'Flight Class',
+            'field_name': 'flight_class',
+            'options': ['Economy', 'Business', 'First Class']
+        },
+        {
+            'name': 'Flight Type',
+            'field_name': 'flight_type',
+            'options': ['One-Way', 'Round-Trip']
+        },
+    ]
+
     if request.method == 'POST':
-        form = LoanApplicationForm(request.POST)
-        if form.is_valid():
-            loan = form.save(commit=False)
-            loan.user = request.user
-            loan.save()
-            return redirect('services:loan_success')
-    else:
-        form = LoanApplicationForm()
-    
-    # Context for rendering the page
-    context = {
-        'form': form,
-        'wallet': wallet,
-        'wallet_currencies': [
-            {"currency": "NGN", "symbol": "₦", "balance": wallet.balance if wallet else 0}
-        ] if wallet else [],
-        'transactions': transactions,
-    }
-    
-    return render(request, 'services/get_loan.html', context)
+        flight_id = request.POST.get('flight_id')
+        seat_count = int(request.POST.get('seat_count'))
+        payment_method = request.POST.get('payment_method')
 
-def loan_success(request):
-    return render(request, 'services/loan_success.html')
+        flight = get_object_or_404(Flight, id=flight_id)
+
+        if seat_count > flight.available_seats:
+            messages.error(request, "Not enough seats available.")
+            return redirect('services:airport_search')
+
+        total_price = seat_count * flight.price
+
+        if payment_method == 'wallet':
+            if wallet.balance >= total_price:
+                wallet.balance -= total_price
+                wallet.save()
+
+                flight.available_seats -= seat_count
+                flight.save()
+
+                booking = Booking.objects.create(
+                    user=request.user,
+                    flight=flight,
+                    seat_count=seat_count,
+                    total_price=total_price,
+                    booking_reference=get_random_string(length=12),
+                    status='Paid'
+                )
+
+                Transaction.objects.create(
+                    user=request.user,
+                    amount=total_price,
+                    transaction_type='debit',
+                    purpose='Flight Booking',
+                )
+
+                messages.success(request, "Booking confirmed via wallet.")
+                return redirect('services:booking_confirmation', booking_id=booking.id)
+            else:
+                messages.error(request, "Insufficient wallet balance.")
+                return redirect('services:airport_search')
+
+        elif payment_method == 'paystack':
+            booking = Booking.objects.create(
+                user=request.user,
+                flight=flight,
+                seat_count=seat_count,
+                total_price=total_price,
+                booking_reference=get_random_string(length=12),
+                status='Pending'
+            )
+            redirect_url = PaystackAPI(request.user.email, total_price, booking.id)
+            return redirect(redirect_url)
+
+    context = {
+        'wallet': wallet,
+        'wallet_currencies': [{"currency": "NGN", "symbol": "₦", "balance": wallet.balance}],
+        'transactions': transactions,
+        'categories': categories,
+    }
+    return render(request, 'services/flight_booking.html', context)
+
+
+
+def flight_search(request):
+    origin = request.GET.get('origin')
+    destination = request.GET.get('destination')
+    date = request.GET.get('date')
+    adults = request.GET.get('adults', 1)
+
+    access_token = get_amadeus_access_token()
+    if not access_token:
+        return JsonResponse({'error': 'Failed to authenticate with Amadeus API'}, status=400)
+
+    url = f'https://test.api.amadeus.com/v2/shopping/flight-offers'
+    params = {
+        'originLocationCode': origin,
+        'destinationLocationCode': destination,
+        'departureDate': date,
+        'adults': adults,
+        'max': 5
+    }
+    headers = {
+        'Authorization': f'Bearer {access_token}'
+    }
+    response = requests.get(url, params=params, headers=headers)
+
+    if response.status_code == 200:
+        data = response.json()['data']
+        flights = [{
+            'flight': f"{flight['itineraries'][0]['segments'][0]['departure']['iataCode']} ➡ {flight['itineraries'][0]['segments'][-1]['arrival']['iataCode']}",
+            'price': flight['price']['grandTotal'],
+            'date': date,
+            'adults': adults
+        } for flight in data]
+        return JsonResponse(flights, safe=False)
+    else:
+        return JsonResponse({'error': 'Failed to fetch flight data from Amadeus API'}, status=400)
+
+
+def search_hotels(request):
+    city = request.GET.get('city')
+
+    access_token = get_amadeus_access_token()
+    if not access_token:
+        return JsonResponse({'error': 'Failed to authenticate with Amadeus API'}, status=400)
+
+    url = f'https://test.api.amadeus.com/v2/shopping/hotel-offers'
+    params = {
+        'cityCode': city,
+        'adults': 1,
+        'radius': 5,  # Limit search radius to 5km
+        'radiusUnit': 'KM',
+    }
+    headers = {
+        'Authorization': f'Bearer {access_token}'
+    }
+    response = requests.get(url, params=params, headers=headers)
+
+    if response.status_code == 200:
+        data = response.json()['data']
+        hotels = [{
+            'hotel': hotel['hotel']['name'],
+            'city': city,
+            'price': hotel['offers'][0]['price']['total']
+        } for hotel in data]
+        return JsonResponse(hotels, safe=False)
+    else:
+        return JsonResponse({'error': 'Failed to fetch hotel data from Amadeus API'}, status=400)
+
+
+@login_required
+def manage_booking(request):
+    booking = Booking.objects.filter(user=request.user).first()
+    if not booking:
+        messages.error(request, "No booking found.")
+        return redirect('services:airport_search')
+
+    context = {
+        'booking': booking
+    }
+    return render(request, 'services/manage_booking.html', context)
+
+
+@login_required
+def booking_confirmation(request, booking_id):
+    try:
+        booking = Booking.objects.get(id=booking_id, user=request.user)
+    except Booking.DoesNotExist:
+        raise Http404("Booking not found")
+
+    context = {
+        'booking': booking
+    }
+    return render(request, 'services/booking_confirmation.html', context)
+
+
+@login_required
+def update_booking(request, booking_id):
+    try:
+        booking = Booking.objects.get(id=booking_id, user=request.user)
+    except Booking.DoesNotExist:
+        raise Http404("Booking not found")
+
+    if request.method == 'POST':
+        new_seat_count = int(request.POST.get('seat_count'))
+
+        if new_seat_count > booking.flight.available_seats:
+            messages.error(request, "Not enough available seats.")
+            return redirect('services:update_booking', booking_id=booking.id)
+
+        booking.seat_count = new_seat_count
+        booking.total_price = new_seat_count * booking.flight.price
+        booking.save()
+
+        booking.flight.available_seats -= new_seat_count
+        booking.flight.save()
+
+        messages.success(request, "Booking updated successfully!")
+        return redirect('services:manage_booking')
+
+    context = {
+        'booking': booking
+    }
+    return render(request, 'services/update_booking.html', context)
+
+
+@login_required
+def cancel_booking(request, booking_id):
+    try:
+        booking = Booking.objects.get(id=booking_id, user=request.user)
+    except Booking.DoesNotExist:
+        raise Http404("Booking not found")
+
+    if booking.status == 'Cancelled':
+        messages.error(request, "Booking already cancelled.")
+        return redirect('services:manage_booking')
+
+    booking.status = 'Cancelled'
+    booking.flight.available_seats += booking.seat_count
+    booking.flight.save()
+    booking.save()
+
+    messages.success(request, "Booking cancelled successfully!")
+    return redirect('services:manage_booking')
+
+def get_amadeus_access_token():
+    url = 'https://test.api.amadeus.com/v1/security/oauth2/token'
+    data = {
+        'grant_type': 'client_credentials',
+        'client_id': settings.AMADEUS_CLIENT_ID,
+        'client_secret': settings.AMADEUS_CLIENT_SECRET,
+    }
+    response = requests.post(url, data=data)
+    if response.status_code == 200:
+        return response.json()['access_token']
+    else:
+        return None
+
+
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def paystack_callback(request, booking_id):
+    ref = request.GET.get('reference')
+
+    # Verify payment with Paystack
+    headers = {
+        "Authorization": "Bearer YOUR_PAYSTACK_SECRET_KEY"
+    }
+    url = f"https://api.paystack.co/transaction/verify/{ref}"
+    response = requests.get(url, headers=headers).json()
+
+    if response['data']['status'] == 'success':
+        booking = Booking.objects.get(id=booking_id)
+        booking.status = 'Paid'
+        booking.save()
+
+        # Update seat count
+        booking.flight.available_seats -= booking.seat_count
+        booking.flight.save()
+
+        # Record transaction
+        Transaction.objects.create(
+            user=booking.user,
+            amount=booking.total_price,
+            transaction_type='debit',
+            purpose='Flight Booking (Paystack)',
+        )
+
+        messages.success(request, "Payment successful and booking confirmed!")
+        return redirect('services:booking_confirmation', booking_id=booking.id)
+    else:
+        messages.error(request, "Payment failed.")
+        return redirect('services:airport_search')
+
 
 
 class SchoolFeesPaymentView(View):
@@ -944,6 +912,8 @@ def startimes_payment(request):
     return render(request, 'services/startimes_payment.html', context)
 
 
+from .models import Service
+
 def search_view(request):
     query = request.GET.get('q', '')  # Get the query parameter from the URL
     results = []  # Default empty result list
@@ -958,13 +928,35 @@ def search_view(request):
     return render(request, 'services/search_results.html', {'query': query, 'results': results})
 
 
+
+
+
 class WAECResultCheckerView(View):
     def get(self, request):
-        form = WAECResultCheckerForm()
-        return render(request, 'services/waec_result_checker.html', {'form': form})
+        # Fetch the wallet and transactions only if the user is authenticated
+        wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None 
+        transactions = Transaction.objects.filter(user=request.user) if request.user.is_authenticated else []
+
+        form = WaecResultCheckForm()
+        
+        # Context data
+        context = {
+            'form': form,
+            'wallet': wallet,
+            'wallet_currencies': [
+                {"currency": "NGN", "symbol": "₦", "balance": wallet.balance if wallet else 0}
+            ] if wallet else [],
+            'transactions': transactions,
+        }
+        
+        return render(request, 'services/waec_result_checker.html', context)
 
     def post(self, request):
-        form = WAECResultCheckerForm(request.POST)
+        # Fetch the wallet and transactions only if the user is authenticated
+        wallet = get_object_or_404(Wallet, user=request.user) if request.user.is_authenticated else None 
+        transactions = Transaction.objects.filter(user=request.user) if request.user.is_authenticated else []
+        
+        form = WaecResultCheckForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
             candidate_number = data['candidate_number']
@@ -975,7 +967,7 @@ class WAECResultCheckerView(View):
             card_details = data.get('card_details', '')
 
             if payment_method == 'wallet':
-                wallet = Wallet.objects.get(user=user)
+                # Handle payment via wallet
                 if wallet.balance >= 500:  # Example cost for WAEC PIN
                     wallet.balance -= 500
                     wallet.save()
@@ -986,6 +978,7 @@ class WAECResultCheckerView(View):
                     return JsonResponse({"error": "Insufficient wallet balance"}, status=400)
             
             elif payment_method == 'debit_card':
+                # Handle payment via debit card (Paystack)
                 response = self._process_paystack_payment(500, email, card_details)
                 if response.get('status') == "success":
                     result_pin = self._generate_waec_result_pin()
@@ -993,7 +986,16 @@ class WAECResultCheckerView(View):
                 else:
                     return JsonResponse({"error": response.get('message', 'Error processing payment')}, status=400)
 
-        return render(request, 'services/waec_result_checker.html', {'form': form})
+        # In case the form is invalid, return the same page with the form errors
+        context = {
+            'form': form,
+            'wallet': wallet,
+            'wallet_currencies': [
+                {"currency": "NGN", "symbol": "₦", "balance": wallet.balance if wallet else 0}
+            ] if wallet else [],
+            'transactions': transactions,
+        }
+        return render(request, 'services/waec_result_checker.html', context)
 
     def _generate_waec_result_pin(self):
         # Generate a random 12-character alphanumeric PIN for result checking
@@ -1031,6 +1033,8 @@ class WAECResultCheckerView(View):
             amount=amount,
             transaction_type="debit"
         )
+
+        
 
 
 def dstv_payment_success(request):

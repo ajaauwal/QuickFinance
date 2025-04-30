@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load static %}
+  <div class="container">
+    <h2>Search for Flights</h2>
+    <form method="GET" action="{% url 'flight_search' %}">
+      <div class="form-group">
+        <label for="origin">Origin</label>
+        <input type="text" class="form-control" id="origin" name="origin" placeholder="Enter departure city" required>
+      </div>
+
+      <div class="form-group">
+        <label for="destination">Destination</label>
+        <input type="text" class="form-control" id="destination" name="destination" placeholder="Enter destination city" required>
+      </div>
+
+      <div class="form-group">
+        <label for="date">Flight Date</label>
+        <input type="date" class="form-control" id="date" name="date" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+
+    {% if flights %}
+      <h3 class="mt-4">Available Flights</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Flight Number</th>
+            <th>Departure</th>
+            <th>Destination</th>
+            <th>Departure Time</th>
+            <th>Arrival Time</th>
+            <th>Price</th>
+            <th>Available Seats</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for flight in flights %}
+            <tr>
+              <td>{{ flight.flight_number }}</td>
+              <td>{{ flight.departure }}</td>
+              <td>{{ flight.destination }}</td>
+              <td>{{ flight.departure_time }}</td>
+              <td>{{ flight.arrival_time }}</td>
+              <td>${{ flight.price }}</td>
+              <td>{{ flight.available_seats }}</td>
+              <td>
+                <a href="{% url 'booking' flight.id %}" class="btn btn-success">Book Now</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No flights found for the selected criteria.</p>
+    {% endif %}
+  </div>
+<style>
+    /* General container styling */
+.container {
+  margin-top: 30px;
+  padding: 20px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Heading styles */
+h2 {
+  font-size: 2.5rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+h3 {
+  font-size: 1.8rem;
+  font-weight: 500;
+  margin-top: 30px;
+  text-align: center;
+  color: #555;
+}
+
+/* Form Styling */
+form {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 25px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #333;
+}
+
+input[type="text"], input[type="date"], select {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+  transition: all 0.3s ease;
+}
+
+input[type="text"]:focus, input[type="date"]:focus, select:focus {
+  border-color: #4CAF50;
+  outline: none;
+  background-color: #ffffff;
+}
+
+select {
+  font-size: 1rem;
+  padding: 12px;
+  cursor: pointer;
+}
+
+/* Button Styles */
+button[type="submit"] {
+  background: linear-gradient(135deg, #007bff, #00bfff);
+  color: white;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+button[type="submit"]:hover {
+  background: linear-gradient(135deg, #005bb5, #0094cc);
+  transform: translateY(-2px);
+}
+
+button[type="submit"]:active {
+  transform: translateY(2px);
+}
+
+/* Table Styling */
+table {
+  width: 100%;
+  margin-top: 40px;
+  border-collapse: collapse;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+table th, table td {
+  padding: 14px 18px;
+  text-align: left;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+}
+
+table th {
+  background-color: #f1f1f1;
+  color: #333;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+table td {
+  background-color: #ffffff;
+}
+
+table tr:nth-child(even) td {
+  background-color: #f9f9f9;
+}
+
+table tr:hover td {
+  background-color: #f1f1f1;
+}
+
+table .btn {
+  background-color: #28a745;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+table .btn:hover {
+  background-color: #218838;
+}
+
+table .btn:active {
+  transform: translateY(2px);
+}
+
+/* Message when no flights are found */
+p {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 30px;
+}
+
+/* Responsive styling */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+
+  h2 {
+    font-size: 2rem;
+  }
+
+  form {
+    padding: 20px;
+    width: 100%;
+  }
+
+  table th, table td {
+    font-size: 0.9rem;
+  }
+
+  button[type="submit"] {
+    padding: 10px 18px;
+    font-size: 1rem;
+  }
+}
+
+</style>
+
+{% endblock %}

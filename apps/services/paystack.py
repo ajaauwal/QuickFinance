@@ -130,7 +130,7 @@ if __name__ == "__main__":
         reference=reference,
         amount=2500,
         email="customer@example.com",
-        callback_url="https://example.com/payment/callback",
+        callback_url="https://quickfinance.com/payment/callback",
         metadata={"customer_id": 7890}
     )
 

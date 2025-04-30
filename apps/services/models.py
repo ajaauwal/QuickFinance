@@ -7,16 +7,19 @@ from django.conf import settings
 # =====================================
 class Service(models.Model):
     SERVICE_TYPES = [
-        ('airtime', 'Airtime Recharge'),
-        ('data', 'Data Top-Up'),
-        ('electricity', 'Electricity Bill'),
-        ('cable_tv', 'Cable TV Bill'),
-        ('flight', 'Flight Booking'),
-        ('fees', 'School Fees'),
+        ('PurchaseAirtime', 'Airtime Recharge'),
+        ('DataPurchase', 'Data Purchase'),
+        ('SchoolFeesPayment', 'School Fees Payment'),
+        ('AirlineBooking', 'Airline Booking'),
+        ('ElectricityPayment', 'Electricity Payment'),
+        ('DstvSubscription', 'DSTV Subscription'),
+        ('GoTVSubscription', 'GoTV Subscription'),
+        ('StarTimesSubscription', 'StarTimes Subscription'),
         ('waecresultcheck', 'WAEC Result Check'),
     ]
+    
     name = models.CharField(max_length=50)
-    service_type = models.CharField(max_length=20, choices=SERVICE_TYPES)
+    service_type = models.CharField(max_length=30, choices=SERVICE_TYPES)  # Increased max_length to 30
 
     def __str__(self):
         return self.name
@@ -46,7 +49,7 @@ NETWORK_PROVIDERS = (
 # =====================================
 # Airtime Recharge
 # =====================================
-class AirtimeRecharge(models.Model):
+class PurchaseAirtime(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='airtime_recharges')
     network_provider = models.CharField(max_length=20, choices=NETWORK_PROVIDERS)
     phone_number = models.CharField(max_length=15)
@@ -215,24 +218,54 @@ class WaecResultCheck(models.Model):
         return f"WAEC Result Check for {self.exam_number} by {self.user.username}"
 
 
-# =====================================
-# FLIGHT / AIRLINE BOOKINGS
-# =====================================
-class FlightBooking(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='flight_bookings')
-    departure_city = models.CharField(max_length=100)
-    arrival_city = models.CharField(max_length=100)
-    departure_date = models.DateField()
-    return_date = models.DateField(blank=True, null=True)
-    number_of_passengers = models.IntegerField()
-    children = models.IntegerField(default=0)
-    infants = models.IntegerField(default=0)
-    contact_number = models.CharField(max_length=15)
-    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
-    date_created = models.DateTimeField(auto_now_add=True)
+# models.py
+from django.conf import settings
+from django.db import models
+
+# Flight-related Models
+
+class Flight(models.Model):
+    flight_number = models.CharField(max_length=20)
+    departure = models.CharField(max_length=100)
+    destination = models.CharField(max_length=100)
+    departure_time = models.DateTimeField()
+    arrival_time = models.DateTimeField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    available_seats = models.IntegerField()
 
     def __str__(self):
-        return f"{self.user.username} - {self.departure_city} to {self.arrival_city}"
+        return f"{self.flight_number} from {self.departure} to {self.destination}"
+
+from django.db import models
+from django.conf import settings
+
+class Booking(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    flight = models.ForeignKey(Flight, on_delete=models.CASCADE)
+    booking_reference = models.CharField(max_length=20, unique=True)
+    seat_count = models.IntegerField()
+    booking_time = models.DateTimeField(auto_now_add=True)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, default='Pending')
+    
+    # Add new fields
+    email = models.EmailField()  # Add email field
+    passengers = models.PositiveIntegerField()  # Add passengers (seat_count renamed to passengers)
+
+    def __str__(self):
+        return f"Booking {self.booking_reference} for {self.user.username}"
+
+class FlightSearch(models.Model):
+    origin = models.CharField(max_length=100)
+    destination = models.CharField(max_length=100)
+    date = models.DateField()
+    # Link to Flight model for available flights
+    available_flights = models.ManyToManyField(Flight, blank=True)
+
+    def __str__(self):
+        return f"Search results from {self.origin} to {self.destination} on {self.date}"
+
+
 
 
 # =====================================
@@ -248,19 +281,7 @@ class PaystackTransaction(models.Model):
         return f"Paystack Transaction {self.reference} - {self.status}"
 
 
-# =====================================
-# LOAN APPLICATION
-# =====================================
-class LoanApplication(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    term = models.IntegerField(help_text="Loan term in months")
-    purpose = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"Loan Application {self.id} by {self.user.username}"
-    
 
 class ServicePayment(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='service_payment')
@@ -275,3 +296,12 @@ class ServicePayment(models.Model):
 
     def __str__(self):
         return f"{self.service_name} - {self.amount}"
+
+
+class ServiceType(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name

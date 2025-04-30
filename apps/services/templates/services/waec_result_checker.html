@@ -1,31 +1,98 @@
-{% extends 'base_generic.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
-  <h2>WAEC Result Checker</h2>
+<main>
+  <section class="result-checker">
+    <h2>WAEC Result Checker</h2>
 
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
+    <p>Enter your WAEC exam number below to check your result.</p>
 
-    <button type="submit">Check Result</button>
-  </form>
+    <form method="POST" action="{% url 'services:waec_result_checker' %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="exam_number">Exam Number:</label>
+        <input type="text" id="exam_number" name="exam_number" required placeholder="Enter your WAEC exam number">
+      </div>
 
-  {% if request.is_ajax %}
-    <div id="response-message">
-      <!-- For AJAX, display response here -->
+      <button type="submit" class="btn">Check Result</button>
+    </form>
+
+    <div class="result-display">
+      {% if result %}
+        <h3>Your WAEC Result:</h3>
+        <p>{{ result }}</p>
+      {% elif error %}
+        <p class="error">{{ error }}</p>
+      {% endif %}
     </div>
-  {% endif %}
-  
-  {% if form.errors %}
-    <div class="error-summary">
-      <ul>
-        {% for field in form %}
-          {% for error in field.errors %}
-            <li>{{ error }}</li>
-          {% endfor %}
-        {% endfor %}
-      </ul>
-    </div>
-  {% endif %}
+  </section>
+</main>
+
+<style>
+  .result-checker {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+    text-align: center;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .result-checker h2 {
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    color: #333;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    color: #555;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+
+  .btn {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    background-color: #008CBA;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .btn:hover {
+    background-color: #006f8e;
+  }
+
+  .result-display {
+    margin-top: 2rem;
+    padding: 1rem;
+    background-color: #e0f7fa;
+    border-radius: 5px;
+  }
+
+  .result-display h3 {
+    font-size: 1.2rem;
+    color: #00796b;
+  }
+
+  .result-display .error {
+    color: red;
+  }
+</style>
 
 {% endblock %}

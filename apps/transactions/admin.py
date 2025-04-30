@@ -1,14 +1,29 @@
 from django.contrib import admin
-from .models import Transaction, Payment, Wallet, Profile, ServiceType, Bank, TransferRecipient, Transfer
+from .models import Transaction, Payment, Wallet, Profile, Bank, TransferRecipient, Transfer
 
 
-# Admin for Transaction
+from django.contrib import admin
+from .models import Transaction
+
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('transaction_id', 'status', 'amount', 'created_at')  # Updated to valid fields
-    list_filter = ('status',)  # Adjusted filter for valid fields
-    search_fields = ('transaction_id', 'status')  # Updated to valid fields
-    ordering = ('-created_at',)  # Order by valid field
+    # List display fields, ensure they match fields or methods in your Transaction model
+    list_display = ('transaction_id', 'status', 'amount', 'created_at')  
+    
+    # Filter options for the admin panel
+    list_filter = ('status',)  
+    
+    # Fields that can be searched within the admin interface
+    search_fields = ('transaction_id', 'status')  
+    
+    # Default ordering in the admin panel
+    ordering = ('-created_at',)  
+
+    # If transaction_id is a method, define it as a method within the admin class
+    def transaction_id(self, obj):
+        return obj.id  # Adjust if transaction_id is a different field
+    transaction_id.short_description = 'Transaction ID'  # Optional: Add description for the list display
+
 
 
 # Admin for Payment
@@ -51,10 +66,6 @@ class ProfileAdmin(admin.ModelAdmin):
     get_last_name.short_description = 'Last Name'
 
 
-# Admin for ServiceType
-@admin.register(ServiceType)
-class ServiceTypeAdmin(admin.ModelAdmin):
-    list_display = ['name', 'description', 'created_at']
 
 
 # Admin for Bank

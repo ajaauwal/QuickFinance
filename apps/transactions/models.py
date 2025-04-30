@@ -8,12 +8,11 @@ from django.contrib.auth.models import User
 
 
 
-# Gender choices for profile
 GENDER_CHOICES = [
-    ('male', 'Male'),
-    ('female', 'Female'),
-    ('non_binary', 'Non-binary'),
-    ('prefer_not_to_say', 'Prefer not to say'),
+    ('M', 'Male'),
+    ('F', 'Female'),
+    ('O', 'Other'),
+    ('N', 'Prefer not to say'),
 ]
 
 class Profile(models.Model):
@@ -31,6 +30,7 @@ class Profile(models.Model):
         return f"{self.user.username}'s Profile"
 
     def update_profile(self, phone_number=None, address=None, date_of_birth=None, profile_picture=None, gender=None):
+        """Update user profile details."""
         if phone_number:
             self.phone_number = phone_number
         if address:
@@ -44,43 +44,80 @@ class Profile(models.Model):
         self.save()
 
     class Meta:
-        app_label = 'transactions'  # Ensure app label is correct
+        verbose_name = 'Profile'
+        verbose_name_plural = 'Profiles'
+
+    
+# models.py
+from django.db import models
+from django.conf import settings  # Import settings to reference the user model
+from apps.services.models import Service
 
 class Wallet(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wallet')
-    balance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    service = models.ForeignKey(Service, on_delete=models.SET_NULL, null=True, blank=True)
+    wallet_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
 
     def __str__(self):
-        return f"{self.user.username} - Wallet Balance: {self.balance}"
+        return f"Wallet for {self.user.username}"
 
-    class Meta:
-        app_label = 'transactions'  # Ensure app label is correct
+
+from django.conf import settings
+from django.db import models
+import uuid
+
+import uuid
+from django.conf import settings
+from django.db import models
 
 class Transaction(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='transactions')
-    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)  # Direct reference to Wallet model
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    SERVICE_TYPES = [
+        ('airtime', 'Airtime'),
+        ('data', 'Data'),
+        ('tv', 'TV Subscription'),
+        ('electricity', 'Electricity Payment'),
+        ('school_fees', 'School Fees Payment'),
+        ('waec', 'WAEC Result Check'),
+        ('wallet_transfer', 'Wallet to Bank Transfer'),  # ✅ New
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    wallet = models.ForeignKey('transactions.Wallet', on_delete=models.CASCADE)
+
+    service_type = models.CharField(max_length=50, choices=SERVICE_TYPES, null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=50)
-    created_at = models.DateTimeField(auto_now_add=True)
-    transaction_id = models.CharField(max_length=100)
 
-    def __str__(self):
-        return f"Transaction {self.id} by {self.user.username}"
+    # Paystack/Transaction identifiers
+    transaction_id = models.CharField(max_length=100, unique=True, editable=False, blank=True)
+    reference = models.CharField(max_length=100, unique=True, editable=False, blank=True)
 
-    class Meta:
-        app_label = 'transactions'  # Ensure app label is correct
+    # Bank transfer info (only used if service_type == wallet_transfer)
+    bank_name = models.CharField(max_length=100, null=True, blank=True)
+    account_number = models.CharField(max_length=20, null=True, blank=True)
 
-
-
-
-class ServiceType(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    description = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        if not self.transaction_id:
+            self.transaction_id = f"TXN-{uuid.uuid4().hex[:10].upper()}"
+        if not self.reference:
+            self.reference = uuid.uuid4().hex
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return self.name
+        return f"{self.user.username} - {self.service_type or 'Transfer'} - {self.status}"
+
+
 
 
 class Bank(models.Model):
@@ -91,21 +128,17 @@ class Bank(models.Model):
     def __str__(self):
         return self.name
 
-class Bank(models.Model):
-    name = models.CharField(max_length=255)
-    code = models.CharField(max_length=10)
-
-    def __str__(self):
-        return self.name
-
+# models.py
 class UserBank(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    bank = models.ForeignKey(Bank, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    bank_name = models.CharField(max_length=100)
     account_number = models.CharField(max_length=20)
     account_name = models.CharField(max_length=255)
+    bank_code = models.CharField(max_length=10)
 
-    def __str__(self):
-        return f"{self.account_name} ({self.bank.name})"
+    def get_balance(self):
+        # Assume you store balance
+        return Decimal('5000.00')
 
 
 class Transfer(models.Model):

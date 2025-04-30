@@ -3,8 +3,8 @@ from django.contrib.auth.models import User
 from services.models import Service
 from .models import Transaction
 from django.test import TestCase
-from apps.accounts.models import Profile
-from apps.transactions.models import Wallet
+from .models import Profile, Wallet
+
 
 
 class TransactionTests(TestCase):

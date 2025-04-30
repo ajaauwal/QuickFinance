@@ -176,6 +176,14 @@ class SocialDjangoView(View):
 
 
 # --------------------- SignUp View ---------------------
+from django.views.decorators.csrf import csrf_protect
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import SignUpForm
+
+@method_decorator(csrf_protect, name='dispatch')
 class SignUpView(View):
     def get(self, request):
         return render(request, 'accounts/signup.html', {'form': SignUpForm()})
@@ -185,5 +193,5 @@ class SignUpView(View):
         if form.is_valid():
             form.save()
             messages.success(request, "Signup successful! Please log in to continue.")
-            return redirect('accounts:login')  # Redirects to login page after signup
+            return redirect('accounts:login')
         return render(request, 'accounts/signup.html', {'form': form})

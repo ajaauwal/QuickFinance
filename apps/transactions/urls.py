@@ -1,13 +1,13 @@
 from django.urls import path
+from . import views
 from .views import (
     WalletView,
     ProfileView,
-    PaymentInitiateView,
     TransactionListView,
     bank_selection_view,
     process_bank_view,
-    paystack_payment,
-    paystack_callback,
+    initiate_payment,
+    payment_callback,
     update_profile,
     update_user_wallet_balance,
     get_wallet_balance,
@@ -31,6 +31,8 @@ from .views import (
     transaction_form,
     transaction_success,
     transaction_view,
+    wallet_summary,
+    transaction_history_json,  # <-- Ensure this exists
 )
 
 app_name = 'transactions'
@@ -38,14 +40,19 @@ app_name = 'transactions'
 urlpatterns = [
     # Transaction CRUD
     path('history/', transaction_history, name='transaction_history'),
+    path('history/json/', transaction_history_json, name='transaction_history_json'),
     path('create/', create_transaction_view, name='create_transaction'),
     path('<int:transaction_id>/', transaction_detail_view, name='transaction_detail'),
     path('<int:transaction_id>/update-status/', update_transaction_status_view, name='update_transaction_status'),
 
     # Payment Initiation and Verification
     path('verify/<str:reference>/', verify_transaction, name='verify_transaction'),
-    path('initiate-payment/', PaymentInitiateView.as_view(), name='initiate_payment'),
+    path('initiate-payment/', initiate_payment, name='initiate_payment'),  # Updated to function-based view
     path('verify-payment/', verify_payment, name='verify_payment'),
+
+     path('api/deposit/initialize/', views.deposit_initialize, name='deposit_initialize'),
+    path('api/deposit/verify/', views.deposit_verify, name='deposit_verify'),
+    path('api/pay/service/', views.pay_for_service, name='pay_for_service'),
 
     # Wallet & Fund Management
     path('add-money/', add_money, name='add_money'),
@@ -62,6 +69,9 @@ urlpatterns = [
     # Transfers
     path('transfer/', transfer, name='transfer'),
     path('transfer/success/', transfer_success, name='transfer_success'),
+    # urls.py
+    path('withdraw/', views.withdraw_to_bank, name='withdraw_to_bank'),
+
 
     # Bank Operations
     path('select-bank/', bank_selection_view, name='bank_selection'),
@@ -71,8 +81,7 @@ urlpatterns = [
     path('transaction-success/<int:transaction_id>/', transaction_success, name='transaction_success'),
 
     # Payment Gateways
-    path('payments/paystack/', paystack_payment, name='paystack_payment'),
-    path('payments/callback/', paystack_callback, name='paystack_callback'),
+    path('payment/callback/', payment_callback, name='payment_callback'),
 
     # User Profile & Settings
     path('profile/', ProfileView.as_view(), name='profile'),
@@ -84,4 +93,5 @@ urlpatterns = [
     # Miscellaneous
     path('success/page/', success_page, name='success_page'),
     path('transactions/list/', TransactionListView.as_view(), name='transaction_list'),
+    path('api/wallet-summary/', wallet_summary, name='wallet-summary'),
 ]

@@ -24,6 +24,8 @@
                 <input type="text" name="account_number" id="account_number" required placeholder="Enter bank account number">
             </div>
 
+            
+
             <div class="form-group">
                 <label for="recipient">Recipient:</label>
                 <input type="text" name="recipient" id="recipient" required placeholder="Enter recipient name">
@@ -134,21 +136,6 @@
             alert('An error occurred. Please try again later.');
         }
     });
-
-    function closeFundsTransferForm() {
-        const fundstransferContainer = document.querySelector('.fundstransfer-container');
-        const videoBackground = document.querySelector('.video-background');
-
-        if (fundstransferContainer) {
-            fundstransferContainer.style.display = 'none';
-        }
-
-        if (videoBackground) {
-            videoBackground.style.display = 'none';
-        }
-
-        history.back();
-    }
 </script>
 
 <style>

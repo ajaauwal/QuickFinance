@@ -1,132 +1,249 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-{% load static %}
-<div class="main-container">
-    <div class="right-panel">
-        <h1>Startimes Payment</h1>
-        <form method="post" class="form-container">
+<link rel="stylesheet" href="{% static 'css/your-style-file.css' %}">
+
+<video id="bg-video" autoplay muted loop>
+    <source src="{% static 'videos/startimes-bg.mp4' %}" type="video/mp4">
+    Your browser does not support HTML5 video.
+</video>
+<div class="overlay"></div>
+
+<div class="container">
+    <a href="javascript:history.back()" class="go-back-btn">← Go Back</a>
+
+    <button class="close-btn" onclick="window.history.back()">×</button>
+
+    <h2 class="animated-fade">StarTimes Subscription</h2>
+
+    <div class="form-section">
+        <h3>Renew or Activate Your Subscription</h3>
+        <form method="post" action="{% url 'services:startimes_payment' %}">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Top-Up</button>
+            
+            <div class="form-group">
+                <label for="smartcard_number">Smartcard Number:</label>
+                <input type="text" id="smartcard_number" name="smartcard_number" placeholder="Enter Smartcard Number" required>
+            </div>
+
+            <!-- DTT or DTH selection -->
+            <div class="form-group">
+                <label for="service_type">Service Type:</label>
+                <select id="service_type" name="service_type" required onchange="updateBouquets()">
+                    <option value="" disabled selected>Select Service Type</option>
+                    <option value="DTT">DTT (Antenna)</option>
+                    <option value="DTH">DTH (Satellite Dish)</option>
+                </select>
+            </div>
+
+            <!-- Bouquet (dynamic) -->
+            <div class="form-group">
+                <label for="package">Select Bouquet:</label>
+                <select id="package" name="package" required>
+                    <option value="" disabled selected>Select Bouquet</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Amount (₦):</label>
+                <input type="number" id="amount" name="amount" placeholder="Enter Amount" required>
+            </div>
+
+            <button type="submit" class="pay-btn">Pay Now</button>
         </form>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="error-message">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
     </div>
 </div>
 
-
 <style>
     body {
-        font-family: Arial, sans-serif;
-        background: linear-gradient(to bottom right, #0d47a1, #1976d2);
-        margin: 0;
-        padding: 20px;
-        color: white;
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(to bottom right, #0d47a1, #1976d2);
+    margin: 0;
+    padding: 0;
+    color: white;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
+
+#bg-video {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    min-width: 100%;
+    min-height: 100%;
+    z-index: -2;
+    object-fit: cover;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: rgba(13, 71, 161, 0.6);
+    z-index: -1;
+}
+
+.container {
+    margin: 40px auto;
+    padding: 30px 20px;
+    max-width: 500px;
+    background: rgba(2, 20, 122, 0.95);
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+h2 {
+    text-align: center;
+    color: #ffffff;
+    margin-bottom: 20px;
+    font-size: 28px;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 4px 6px rgba(0, 0, 0, 0.5);
+}
+
+h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #bbdefb;
+    font-size: 22px;
+}
+
+.form-section {
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+    color: #ffffff;
+    font-size: 14px;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    transition: border 0.3s, box-shadow 0.3s;
+}
+
+input:focus, select:focus {
+    border-color: #1976d2;
+    box-shadow: 0 0 8px rgba(25, 118, 210, 0.8);
+    outline: none;
+}
+
+.pay-btn {
+    width: 100%;
+    background-color: #110272;
+    color: white;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.pay-btn:hover {
+    background-color: #021964;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+}
+
+.go-back-btn {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #fff;
+    font-weight: bold;
+    text-decoration: none;
+    background: #1976d2;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.go-back-btn:hover {
+    background-color: #0d47a1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.close-btn {
+    float: right;
+    background: transparent;
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close-btn:hover {
+    color: #ff5252;
+}
+
+.messages {
+    margin-top: 15px;
+}
+
+.error-message {
+    background: rgba(255, 82, 82, 0.8);
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    text-align: center;
+}
+</style>
+
+<script src="{% static 'js/scripts.js' %}"></script>
+
+<script>
+// Bouquets based on Service Type
+const bouquets = {
+    DTT: [
+        "Nova", "Basic", "Classic", "Unique", "Sports Plus", "French", "Chinese"
+    ],
+    DTH: [
+        "Nova", "Smart", "Super", "Chinese", "French", "French Plus", "Chinese Plus"
+    ]
+};
+
+function updateBouquets() {
+    const serviceType = document.getElementById('service_type').value;
+    const packageSelect = document.getElementById('package');
+
+    // Clear previous options
+    packageSelect.innerHTML = '<option value="" disabled selected>Select Bouquet</option>';
+
+    if (serviceType && bouquets[serviceType]) {
+        bouquets[serviceType].forEach(function (bouquet) {
+            const option = document.createElement('option');
+            option.value = bouquet;
+            option.text = bouquet;
+            packageSelect.appendChild(option);
+        });
     }
-
-    .main-container {
-        margin: 20px auto;
-        padding: 20px;
-        max-width: 600px;
-        background: #fff;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-    }
-
-    .right-panel {
-        flex: 1;
-        background: rgba(255, 255, 255, 0.1);
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-        margin-left: 20px; /* Add margin to distance from the left panel */
-    }
-
-    .form-container {
-        max-width: 400px; /* Reduce the width of the form */
-        margin: auto;
-    }
-
-    h1 {
-        text-align: center;
-        color: #041a7c;
-        margin-bottom: 20px;
-        text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 4px 6px rgba(0, 0, 0, 0.4);
-    }
-
-    .form-section {
-        margin-bottom: 30px;
-        padding: 20px;
-        border: 1px solid rgba(255, 255, 255, 0);
-        border-radius: 8px;
-        background: rgba(2, 20, 122, 0.95);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    .recharge-categories {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .recharge-categories label {
-        flex: 1 1 45%; /* Adjust the width of each category */
-        background: rgba(255, 255, 255, 0);
-        padding: 10px;
-        border-radius: 4px;
-        text-align: center;
-        cursor: pointer;
-        transition: background-color 0.3s;
-    }
-
-    .recharge-categories input[type="radio"] {
-        display: none;
-    }
-
-    .recharge-categories input[type="radio"]:checked + label {
-        background-color: #1976d2;
-        color: white;
-    }
-
-    label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-        color: #fff;
-    }
-
-    input, select {
-        width: calc(100% - 20px);
-        padding: 10px;
-        margin-bottom: 15px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        transition: border-color 0.3s, box-shadow 0.3s;
-    }
-
-    input:focus, select:focus {
-        border-color: #1976d2;
-        box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
-    }
-
-    button {
-        background-color: #110272;
-        color: white;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: bold;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    button:hover {
-        background-color: #021964;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
-    }
-
-    
-    </style>
-
+}
+</script>
 {% endblock %}

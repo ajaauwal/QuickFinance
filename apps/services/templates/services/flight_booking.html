@@ -1,150 +1,202 @@
 {% extends 'base.html' %}
-
-{% block content %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flight Booking</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    <style>
-        /* General Reset */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+{% block content %}
+<div class="container my-5">
 
-        body {
-            background-color: #f5f7fa;
-            font-size: 16px;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
+  <!-- Flight Search -->
+  <div class="card shadow p-4 mb-5">
+    <h3 class="mb-4">✈️ Flight Search</h3>
+    <form id="flight-form" class="row g-3">
+      <div class="col-md-3">
+        <input name="origin" class="form-control" placeholder="From (LAX)" required>
+      </div>
+      <div class="col-md-3">
+        <input name="destination" class="form-control" placeholder="To (JFK)" required>
+      </div>
+      <div class="col-md-3">
+        <input name="date" type="date" class="form-control" required>
+      </div>
+      <div class="col-md-2">
+        <input name="adults" type="number" class="form-control" min="1" value="1" required>
+      </div>
+      <div class="col-md-1">
+        <button type="submit" class="btn btn-primary w-100">Search</button>
+      </div>
+    </form>
+    <div id="flight-results" class="mt-4"></div>
+  </div>
 
-        /* Header */
-        header {
-            text-align: center;
-            padding: 20px 0;
-            background-color: #006994;
-            width: 100%;
-            color: #fff;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
+  <!-- Hotel Search -->
+  <div class="card shadow p-4">
+    <h3 class="mb-4">🏨 Hotel Search</h3>
+    <form id="hotel-form" class="row g-3">
+      <div class="col-md-10">
+        <input name="city" class="form-control" placeholder="City Code (e.g., PAR)" required>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-success w-100">Search</button>
+      </div>
+    </form>
+    <div id="hotel-results" class="mt-4"></div>
+  </div>
 
-        header h1 {
-            font-size: 2.5rem;
-            letter-spacing: 1px;
-        }
+</div>
 
-        /* Container */
-        .container {
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 900px;
-            padding: 30px;
-            margin-top: 20px;
-            text-align: center;
-        }
+<script>
+function renderFlightCard(offer) {
+  const { itineraries, price } = offer;
+  const departure = itineraries[0]?.segments[0]?.departure;
+  const arrival = itineraries[0]?.segments[0]?.arrival;
 
-        .container h2 {
-            font-size: 2rem;
-            color: #006994;
-            margin-bottom: 20px;
-        }
-
-        /* Form */
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        form input[type="text"], form input[type="date"], form input[type="email"], form select {
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 1rem;
-            color: #333;
-            background-color: #f9f9f9;
-            transition: all 0.3s ease;
-        }
-
-        form input[type="text"]:focus, form input[type="date"]:focus, form input[type="email"]:focus, form select:focus {
-            border-color: #0288d1;
-            background-color: #fff;
-            outline: none;
-        }
-
-        /* Submit Button */
-        button[type="submit"] {
-            background-color: #0288d1;
-            color: #fff;
-            font-size: 1.1rem;
-            padding: 15px 25px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-
-        button[type="submit"]:hover {
-            background-color: #0277bd;
-            transform: scale(1.05);
-        }
-
-        button[type="submit"]:focus {
-            outline: none;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            header h1 {
-                font-size: 2rem;
-            }
-
-            .container {
-                padding: 20px;
-            }
-
-            form input[type="text"], form input[type="date"], form input[type="email"], form select {
-                padding: 12px;
-                font-size: 1rem;
-            }
-
-            button[type="submit"] {
-                padding: 12px 20px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-    <header>
-        <h1>Flight Booking</h1>
-    </header>
-
-    <div class="container">
-        <h2>Book Your Flight</h2>
-        <form method="POST" action="{% url 'services:flight_booking' %}">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Search Flights</button>
-        </form>
+  return `
+    <div class="card mb-3 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">${departure.iataCode} → ${arrival.iataCode}</h5>
+        <p class="card-text">Departure: ${departure.at} <br> Arrival: ${arrival.at}</p>
+        <p class="card-text"><strong>Price:</strong> ${price.currency} ${price.total}</p>
+      </div>
     </div>
+  `;
+}
 
-</body>
+function renderHotelCard(hotel) {
+  const { hotel: details, offers } = hotel;
+  const offer = offers?.[0];
 
-</html>
+  return `
+    <div class="card mb-3 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">${details.name}</h5>
+        <p class="card-text">City: ${details.address.cityName}</p>
+        ${offer ? `<p class="card-text"><strong>Price:</strong> ${offer.price.currency} ${offer.price.total}</p>` : ''}
+      </div>
+    </div>
+  `;
+}
 
+document.getElementById('flight-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const params = new URLSearchParams(new FormData(this)).toString();
+  const results = document.getElementById('flight-results');
+  results.innerHTML = '<div class="text-muted">Loading...</div>';
+
+  fetch(`/api/flights/?${params}`)
+    .then(res => res.json())
+    .then(data => {
+      results.innerHTML = data.length ? data.map(renderFlightCard).join('') : '<p>No flights found.</p>';
+    })
+    .catch(() => {
+      results.innerHTML = '<p class="text-danger">Failed to fetch flights.</p>';
+    });
+});
+
+document.getElementById('hotel-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const city = new FormData(this).get('city');
+  const results = document.getElementById('hotel-results');
+  results.innerHTML = '<div class="text-muted">Loading...</div>';
+
+  fetch(`/api/hotels/?city=${city}`)
+    .then(res => res.json())
+    .then(data => {
+      results.innerHTML = data.length ? data.map(renderHotelCard).join('') : '<p>No hotels found.</p>';
+    })
+    .catch(() => {
+      results.innerHTML = '<p class="text-danger">Failed to fetch hotels.</p>';
+    });
+});
+</script>
+
+<style>
+  body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f5f8fa;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 900px;
+  margin: 50px auto;
+  padding: 0 15px;
+}
+
+h3 {
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+  color: #222;
+}
+
+form input,
+form button {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+form input:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+}
+
+form button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+form button:hover {
+  background-color: #0056b3;
+}
+
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+}
+
+.card-title {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #444;
+}
+
+.card-text {
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+
+.text-muted {
+  color: #888;
+}
+
+.text-danger {
+  color: #dc3545;
+}
+
+@media (max-width: 768px) {
+  .row {
+    flex-direction: column;
+  }
+
+  form input,
+  form button {
+    margin-bottom: 10px;
+  }
+}
+</style>
 {% endblock %}
