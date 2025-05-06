@@ -1,6 +1,7 @@
 import requests
 import logging
 import environ
+import time
 
 # Initialize environment variables
 env = environ.Env()
@@ -24,7 +25,33 @@ class PaystackAPI:
             "Content-Type": "application/json"
         }
 
-    def initialize_transaction(self, reference, amount, email, callback_url=None, metadata=None):
+    def _make_request(self, url, method="post", data=None, retries=3, timeout=10, delay=2):
+        """
+        Helper function to make a request with retry logic.
+        """
+        for attempt in range(1, retries + 1):
+            try:
+                if method == "post":
+                    response = requests.post(url, json=data, headers=self.headers, timeout=timeout)
+                elif method == "get":
+                    response = requests.get(url, headers=self.headers, timeout=timeout)
+
+                response.raise_for_status()  # Will raise an error if status is not 2xx
+                if response.status_code == 200 and 'application/json' in response.headers.get('Content-Type', ''):
+                    return response.json()
+                else:
+                    logger.error(f"Unexpected response: {response.text}")
+                    return {"status": False, "message": "Received non-JSON response"}
+            except requests.Timeout:
+                logger.warning(f"Timeout on attempt {attempt}. Retrying...")
+            except requests.RequestException as e:
+                logger.error(f"Attempt {attempt} failed: {e}")
+                if attempt == retries:
+                    return {"status": False, "message": f"Failed after {retries} attempts: {e}"}
+            time.sleep(delay)
+        return {"status": False, "message": "Max retries exceeded"}
+
+    def initialize_transaction(self, reference, amount, email, callback_url=None, metadata=None, retries=3, timeout=10, delay=2):
         """
         Initializes a Paystack transaction.
 
@@ -46,18 +73,10 @@ class PaystackAPI:
         if metadata:
             data["metadata"] = metadata
 
-        try:
-            logger.info(f"Initializing Paystack transaction: {reference}")
-            response = requests.post(url, json=data, headers=self.headers)
-            response.raise_for_status()
-            result = response.json()
-            logger.debug(f"Paystack response: {result}")
-            return result
-        except requests.RequestException as e:
-            logger.error(f"Failed to initialize transaction: {e}")
-            return {"status": False, "message": str(e)}
+        logger.info(f"Initializing Paystack transaction: {reference}")
+        return self._make_request(url, method="post", data=data, retries=retries, timeout=timeout, delay=delay)
 
-    def verify_transaction(self, reference):
+    def verify_transaction(self, reference, retries=3, timeout=10, delay=2):
         """
         Verifies a Paystack transaction by reference.
 
@@ -65,16 +84,8 @@ class PaystackAPI:
         :return: JSON response from Paystack
         """
         url = f"{self.BASE_URL}/transaction/verify/{reference}"
-        try:
-            logger.info(f"Verifying Paystack transaction: {reference}")
-            response = requests.get(url, headers=self.headers)
-            response.raise_for_status()
-            result = response.json()
-            logger.debug(f"Verification response: {result}")
-            return result
-        except requests.RequestException as e:
-            logger.error(f"Failed to verify transaction: {e}")
-            return {"status": False, "message": str(e)}
+        logger.info(f"Verifying Paystack transaction: {reference}")
+        return self._make_request(url, method="get", retries=retries, timeout=timeout, delay=delay)
 
 
 class PaystackSDK:
@@ -85,7 +96,7 @@ class PaystackSDK:
     def __init__(self):
         self.api = PaystackAPI()
 
-    def process_payment(self, reference, amount, email, callback_url=None, metadata=None):
+    def process_payment(self, reference, amount, email, callback_url=None, metadata=None, retries=3, timeout=10, delay=2):
         """
         Initiates a transaction and returns the authorization URL.
 
@@ -96,7 +107,7 @@ class PaystackSDK:
         :param metadata: Optional extra data
         :return: Authorization URL or None
         """
-        response = self.api.initialize_transaction(reference, amount, email, callback_url, metadata)
+        response = self.api.initialize_transaction(reference, amount, email, callback_url, metadata, retries, timeout, delay)
         if response.get("status") and "data" in response:
             auth_url = response["data"].get("authorization_url")
             logger.info(f"Redirecting to Paystack payment page: {auth_url}")
@@ -104,14 +115,14 @@ class PaystackSDK:
         logger.warning(f"Payment initialization failed: {response.get('message')}")
         return None
 
-    def confirm_payment(self, reference):
+    def confirm_payment(self, reference, retries=3, timeout=10, delay=2):
         """
         Confirms whether a payment with the given reference was successful.
 
         :param reference: Transaction reference
         :return: True if successful, False otherwise
         """
-        response = self.api.verify_transaction(reference)
+        response = self.api.verify_transaction(reference, retries, timeout, delay)
         data = response.get("data", {})
         if response.get("status") and data.get("status") == "success":
             logger.info(f"Payment confirmed for reference: {reference}")
@@ -131,7 +142,10 @@ if __name__ == "__main__":
         amount=2500,
         email="customer@example.com",
         callback_url="https://quickfinance.com/payment/callback",
-        metadata={"customer_id": 7890}
+        metadata={"customer_id": 7890},
+        retries=3,
+        timeout=10,
+        delay=2
     )
 
     if auth_url:

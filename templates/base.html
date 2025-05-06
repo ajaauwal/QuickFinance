@@ -69,223 +69,211 @@
         font-size: 0.9rem;
       }
     }
-/* Enhanced Footer Styles */
-.footer-container {
-  background-color: #f8f8f8;
-  padding: 30px 20px;
-  margin-top: auto; /* Ensures the footer sticks to the bottom */
-  width: 100%;
-  color: #333;
-  text-align: center;
-  border-top: 1px solid #e0e0e0; /* Adds a subtle border on top of the footer */
-}
 
-.footer-container .footer-content {
-  max-width: 1200px;
-  margin: 0 auto;
-}
+    /* Enhanced Footer Styles */
+    .footer-container {
+      background-color: #f8f8f8;
+      padding: 30px 20px;
+      margin-top: auto;
+      width: 100%;
+      color: #333;
+      text-align: center;
+      border-top: 1px solid #e0e0e0;
+    }
 
-/* Footer Links */
-.footer-links a {
-  margin: 0 15px;
-  color: #6c63ff;
-  font-size: 1rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 0.3s ease, transform 0.3s ease;
-}
+    .footer-container .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
 
-.footer-links a:hover {
-  text-decoration: underline;
-  color: #4a43e2; /* Slightly darker shade for hover */
-  transform: scale(1.05);
-}
+    .footer-links a {
+      margin: 0 15px;
+      color: #6c63ff;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: color 0.3s ease, transform 0.3s ease;
+    }
 
-/* Social Media Icons */
-.footer-social a img {
-  width: 28px;
-  height: 28px;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-  opacity: 0.7; /* Initially semi-transparent */
-}
+    .footer-links a:hover {
+      text-decoration: underline;
+      color: #4a43e2;
+      transform: scale(1.05);
+    }
 
-.footer-social a img:hover {
-  transform: scale(1.2);
-  opacity: 1; /* Full opacity on hover */
-}
+    .footer-social a img {
+      width: 28px;
+      height: 28px;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      opacity: 0.7;
+    }
 
-.footer-social {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 20px;
-}
+    .footer-social a img:hover {
+      transform: scale(1.2);
+      opacity: 1;
+    }
 
-footer p {
-  color: #777;
-  font-size: 0.9rem;
-  text-align: center;
-  margin-top: 15px;
-  font-weight: 300;
-}
+    .footer-social {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
 
-@media (max-width: 768px) {
-  .footer-links a {
-    margin: 10px 5px;
-    font-size: 0.9rem;
-  }
+    footer p {
+      color: #777;
+      font-size: 0.9rem;
+      text-align: center;
+      margin-top: 15px;
+      font-weight: 300;
+    }
 
-  .footer-social {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+    @media (max-width: 768px) {
+      .footer-links a {
+        margin: 10px 5px;
+        font-size: 0.9rem;
+      }
 
-  footer p {
-    font-size: 0.85rem;
-  }
-}
+      .footer-social {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
 
-@media (max-width: 600px) {
-  .footer-container {
-    padding: 30px 15px;
-  }
+      footer p {
+        font-size: 0.85rem;
+      }
+    }
 
-  .footer-links a {
-    margin: 5px 0;
-    font-size: 0.9rem;
-  }
+    @media (max-width: 600px) {
+      .footer-container {
+        padding: 30px 15px;
+      }
 
-  .footer-social {
-    gap: 15px;
-  }
-}
+      .footer-links a {
+        margin: 5px 0;
+        font-size: 0.9rem;
+      }
 
-    
+      .footer-social {
+        gap: 15px;
+      }
+    }
   </style>
 </head>
 
 <body class="font-poppins flex flex-col min-h-screen">
 
-<!-- Header -->
-<header class="flex justify-between items-center p-5 backdrop-blur-md bg-white/70 shadow-md fixed w-full top-0 z-50">
-  <div class="flex items-center space-x-3">
-    <img src="{% static 'images/quickfinance_logo.png' %}" alt="QuickFinance Logo" class="w-12 h-12" />
-    <span class="text-xl font-bold text-purple-700">QuickFinance</span>
-  </div>
-  <nav class="flex space-x-4 items-center">
-    <div class="relative group">
-      <button class="text-lg font-medium text-gray-800">Hi, {{ user.username }}</button>
-      <div class="dropdown-content">
-        <a href="{% url 'transactions:profile' %}">Profile</a>
-        <a href="{% url 'accounts:logout' %}">Logout</a>
-      </div>
+  <!-- Header -->
+  <header class="flex justify-between items-center p-5 backdrop-blur-md bg-white/70 shadow-md fixed w-full top-0 z-50">
+    <div class="flex items-center space-x-3">
+      <img src="{% static 'images/quickfinance_logo.png' %}" alt="QuickFinance Logo" class="w-12 h-12" />
+      <span class="text-xl font-bold text-purple-700">QuickFinance</span>
     </div>
-  </nav>
-</header>
-
-<!-- Main -->
-<div class="flex flex-1 pt-20">
-  <!-- Sidebar -->
-  <aside class="w-64 bg-white/90 text-gray-900 p-5 min-h-[calc(100vh-5rem)] overflow-y-auto shadow-md">
-    {% if wallet %}
-      <div class="bg-white p-4 rounded-md shadow text-gray-800 mb-6">
-        <h2 class="text-lg font-semibold">Available Balance</h2>
-        <p class="text-2xl font-bold text-purple-700">
-          {{ wallet_currencies.0.balance|floatformat:2|intcomma }}
-          <span class="text-sm text-gray-500">{{ wallet_currencies.0.currency }}</span>
-        </p>
-        <small class="text-sm text-gray-500">Last updated: {{ wallet.updated_at|date:"D, d M Y H:i" }}</small>
+    <nav class="flex space-x-4 items-center">
+      <div class="relative group">
+        <button class="text-lg font-medium text-gray-800">Hi, {{ user.username }}</button>
+        {% if user.wallet %}
+          <p class="text-sm text-gray-600">Wallet ID: {{ user.wallet.wallet_id }}</p>
+        {% endif %}
+        <div class="dropdown-content">
+          <a href="{% url 'transactions:profile' %}">Profile</a>
+          <a href="{% url 'accounts:logout' %}">Logout</a>
+        </div>
       </div>
-    {% else %}
-      <div class="bg-yellow-100 p-4 rounded-md text-gray-800 mb-6">
-        <p>No wallet found. Please create one to get started.</p>
-      </div>
-    {% endif %}
-
-    <nav class="flex flex-col space-y-2">
-      <a href="{% url 'accounts:index' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">Dashboard</a>
-      <a href="{% url 'transactions:add_money' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">Add Money</a>
-      <a href="{% url 'transactions:transfer' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">Transfer to Bank</a>
-      <a href="{% url 'services:purchase_airtime' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">Airtime</a>
-      <a href="{% url 'services:data_topup' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">Data</a>
-      <a href="{% url 'services:utility_bills' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">TV and Electricity</a>
-      <a href="{% url 'services:flight_booking' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">Flight Booking</a>
-      <a href="{% url 'transactions:transaction_history' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">Transaction History</a>
     </nav>
-  </aside>
+  </header>
 
-  <!-- Main Content -->
-  <main class="flex-1 p-6">
-    {% block content %}{% endblock %}
-  </main>
-</div>
+  <!-- Main -->
+  <div class="flex flex-1 pt-20">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white/90 text-gray-900 p-5 min-h-[calc(100vh-5rem)] overflow-y-auto shadow-md">
+      {% if wallet %}
+        <div class="bg-white p-4 rounded-md shadow text-gray-800 mb-6">
+          <h2 class="text-lg font-semibold">Available Balance</h2>
+          <p class="text-2xl font-bold text-purple-700">
+            {{ wallet_currencies.0.balance|floatformat:2|intcomma }}
+            <span class="text-sm text-gray-500">{{ wallet_currencies.0.currency }}</span>
+          </p>
+          <small class="text-sm text-gray-500">Last updated: {{ wallet.updated_at|date:"D, d M Y H:i" }}</small>
+        </div>
+      {% else %}
+        <div class="bg-yellow-100 p-4 rounded-md text-gray-800 mb-6">
+          <p>No wallet found. Please create one to get started.</p>
+        </div>
+      {% endif %}
 
-<!-- Footer -->
-<footer class="footer-container">
-  <div class="flex flex-col md:flex-row justify-between items-center">
-    <div class="footer-links mb-4 md:mb-0">
-      <a href="/privacy-policy">Privacy Policy</a>
-      <a href="/terms-of-service">Terms of Service</a>
-      <a href="/terms_and_conditions">Terms and Conditions</a>
-      <a href="/contact">Contact</a>
-      <a href="/about">About</a>
-    </div>
-    <div class="footer-social flex space-x-3">
-      <a href="https://www.facebook.com/yourprofile" target="_blank">
-        <img src="{% static 'images/facebook.png' %}" alt="Facebook" />
-      </a>
-      <a href="https://twitter.com/yourprofile" target="_blank">
-        <img src="{% static 'images/twitter.png' %}" alt="Twitter" />
-      </a>
-      <a href="https://www.instagram.com/yourprofile" target="_blank">
-        <img src="{% static 'images/instagram.png' %}" alt="Instagram" />
-      </a>
-      <a href="https://www.linkedin.com/in/yourprofile" target="_blank">
-        <img src="{% static 'images/linkedin.png' %}" alt="LinkedIn" />
-      </a>
-      <a href="https://www.youtube.com/in/yourprofile" target="_blank">
-        <img src="{% static 'images/youtube.png' %}" alt="YouTube" />
-      </a>
-    </div>
-    <p class="mt-4 md:mt-0 text-sm">&copy; 2025 QuickFinance. All rights reserved.</p>
+      <nav class="flex flex-col space-y-2">
+        <a href="{% url 'accounts:index' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">Dashboard</a>
+        <a href="{% url 'transactions:add_money' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">Add Money</a>
+        <a href="{% url 'transactions:bank_transfer' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">To Bank </a>
+        <a href="{% url 'transactions:wallet_transfer' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">To QuickFinance </a>
+        <a href="{% url 'services:purchase_airtime' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">Airtime</a>
+        <a href="{% url 'services:data_topup' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">Data</a>
+        <a href="{% url 'services:utility_bills' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">TV and Electricity</a>
+        <a href="{% url 'services:flight_booking' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">Flight Booking</a>
+        <a href="{% url 'transactions:transaction_history' %}" class="block p-3 bg-gray-100 hover:bg-purple-600 hover:text-white rounded-lg transition">Transaction History</a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6">
+      {% block content %}{% endblock %}
+    </main>
   </div>
-</footer>
 
+  <!-- Footer -->
+  <footer class="footer-container">
+    <div class="flex flex-col md:flex-row justify-between items-center">
+      <div class="footer-links mb-4 md:mb-0">
+        <a href="/privacy-policy">Privacy Policy</a>
+        <a href="/terms-of-service">Terms of Service</a>
+        <a href="/terms_and_conditions">Terms and Conditions</a>
+        <a href="/contact">Contact</a>
+        <a href="/about">About</a>
+      </div>
+      <div class="footer-social flex space-x-3">
+        <a href="https://www.facebook.com/yourprofile" target="_blank">
+          <img src="{% static 'images/facebook.png' %}" alt="Facebook" />
+        </a>
+        <a href="https://twitter.com/yourprofile" target="_blank">
+          <img src="{% static 'images/twitter.png' %}" alt="Twitter" />
+        </a>
+        <a href="https://www.instagram.com/yourprofile" target="_blank">
+          <img src="{% static 'images/instagram.png' %}" alt="Instagram" />
+        </a>
+        <a href="https://www.linkedin.com/in/yourprofile" target="_blank">
+          <img src="{% static 'images/linkedin.png' %}" alt="LinkedIn" />
+        </a>
+        <a href="https://www.youtube.com/in/yourprofile" target="_blank">
+          <img src="{% static 'images/youtube.png' %}" alt="YouTube" />
+        </a>
+      </div>
+      <p class="mt-4 md:mt-0 text-sm">&copy; 2025 QuickFinance. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    const dropdown = document.querySelector('.relative');
+
+    dropdown.addEventListener('click', function () {
+      this.classList.toggle('active');
+    });
+
+    window.addEventListener('click', function (event) {
+      if (!dropdown.contains(event.target)) {
+        dropdown.classList.remove('active');
+      }
+    });
+
+    function toggleTransactionHistory() {
+      const transactionHistory = document.getElementById('transaction-history');
+      const olderTransactions = document.getElementById('older-transactions');
+
+      transactionHistory.classList.toggle('hidden');
+      if (olderTransactions) {
+        olderTransactions.classList.toggle('hidden');
+      }
+    }
+  </script>
 </body>
 </html>
-
-
-
-<script>
-    // Get the dropdown container
-    const dropdown = document.querySelector('.relative');
-    
-    // Add a click event listener to the button to toggle visibility
-    dropdown.addEventListener('click', function() {
-        this.classList.toggle('active');
-    });
-    
-    // Close the dropdown if clicked anywhere else on the page
-    window.addEventListener('click', function(event) {
-        if (!dropdown.contains(event.target)) {
-            dropdown.classList.remove('active');
-        }
-    });
-
-   // Function to toggle transaction history visibility
-function toggleTransactionHistory() {
-    const transactionHistory = document.getElementById('transaction-history');
-    const olderTransactions = document.getElementById('older-transactions');
-
-    // Toggle visibility of the transaction list
-    transactionHistory.classList.toggle('hidden');
-
-    // Toggle visibility of older transactions if they exist
-    if (olderTransactions) {
-        olderTransactions.classList.toggle('hidden');
-    }
-}
-
-</script>
-</html>
-

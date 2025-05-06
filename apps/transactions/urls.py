@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import wallet_summary
 from .views import (
     WalletView,
     ProfileView,
@@ -12,7 +13,6 @@ from .views import (
     update_user_wallet_balance,
     get_wallet_balance,
     change_password,
-    transfer,
     transfer_success,
     success_page,
     wallet_balance,
@@ -33,6 +33,7 @@ from .views import (
     transaction_view,
     wallet_summary,
     transaction_history_json,  # <-- Ensure this exists
+    verify_account,
 )
 
 app_name = 'transactions'
@@ -48,9 +49,10 @@ urlpatterns = [
     # Payment Initiation and Verification
     path('verify/<str:reference>/', verify_transaction, name='verify_transaction'),
     path('initiate-payment/', initiate_payment, name='initiate_payment'),  # Updated to function-based view
-    path('verify-payment/', verify_payment, name='verify_payment'),
+    path('verify-payment/', verify_payment, name='verify_payment'),  # This path is for verifying payments
+    path('verify-account/', verify_account, name='verify_account'),  # Renamed path to avoid conflict
 
-     path('api/deposit/initialize/', views.deposit_initialize, name='deposit_initialize'),
+    path('api/deposit/initialize/', views.deposit_initialize, name='deposit_initialize'),
     path('api/deposit/verify/', views.deposit_verify, name='deposit_verify'),
     path('api/pay/service/', views.pay_for_service, name='pay_for_service'),
 
@@ -67,11 +69,14 @@ urlpatterns = [
     path('transaction/', transaction_view, name='transaction'),
 
     # Transfers
-    path('transfer/', transfer, name='transfer'),
+    path('bank-transfer/', views.bank_transfer, name='bank_transfer'),
     path('transfer/success/', transfer_success, name='transfer_success'),
-    # urls.py
-    path('withdraw/', views.withdraw_to_bank, name='withdraw_to_bank'),
-
+    path('wallet-transfer/', views.wallet_transfer, name='wallet_transfer'),
+    path('api/wallet-summary/', wallet_summary, name='wallet_summary'),
+    
+    path('api/paystack/create-recipient/', views.create_paystack_recipient, name='create-paystack-recipient'),
+    path('api/paystack/initiate-transfer/', views.initiate_transfer, name='initiate_transfer'),
+    path('api/paystack/resolve-account/', views.resolve_account_name, name='resolve-account'),
 
     # Bank Operations
     path('select-bank/', bank_selection_view, name='bank_selection'),
@@ -87,7 +92,7 @@ urlpatterns = [
     path('profile/', ProfileView.as_view(), name='profile'),
     path('update-profile/', update_profile, name='update_profile'),
     path('change-password/', change_password, name='change_password'),
-    path('api/get_wallet_balance/', get_wallet_balance, name='get_wallet_balance'),
+    path('wallet/balance/', views.get_wallet_balance, name='wallet_balance'),
     path('update-user-wallet-balance/<str:amount>/', update_user_wallet_balance, name='update_user_wallet_balance'),
 
     # Miscellaneous

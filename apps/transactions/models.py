@@ -47,31 +47,61 @@ class Profile(models.Model):
         verbose_name = 'Profile'
         verbose_name_plural = 'Profiles'
 
-    
-# models.py
 from django.db import models
-from django.conf import settings  # Import settings to reference the user model
+from django.conf import settings
 from apps.services.models import Service
+import random
+from decimal import Decimal
+
+
+def generate_wallet_id():
+    """Generate a unique 10-digit wallet ID."""
+    while True:
+        wallet_id = random.randint(1000000000, 9999999999)  # 10-digit number
+        if not Wallet.objects.filter(wallet_id=wallet_id).exists():
+            return wallet_id
+
 
 class Wallet(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    wallet_id = models.BigIntegerField(unique=True, default=generate_wallet_id)  # Unique wallet ID
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     service = models.ForeignKey(Service, on_delete=models.SET_NULL, null=True, blank=True)
     wallet_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
-
     def __str__(self):
-        return f"Wallet for {self.user.username}"
+        return f"Wallet for {self.user.username} with ID: {self.wallet_id}"
+
+    def deposit(self, amount):
+        """Deposit funds into the wallet."""
+        if amount <= 0:
+            raise ValueError("Deposit amount must be greater than zero.")
+        
+        self.balance += Decimal(amount)
+        self.save()
+        return self.balance
+
+    def withdraw(self, amount):
+        """Withdraw funds from the wallet."""
+        if amount <= 0:
+            raise ValueError("Withdrawal amount must be greater than zero.")
+        
+        if self.balance < Decimal(amount):
+            raise ValueError("Insufficient funds in wallet.")
+        
+        self.balance -= Decimal(amount)
+        self.save()
+        return self.balance
+
+    def get_balance(self):
+        """Return the current balance of the wallet."""
+        return self.balance
 
 
-from django.conf import settings
+import uuid  # Ensure uuid is imported
 from django.db import models
-import uuid
-
-import uuid
 from django.conf import settings
-from django.db import models
 
 class Transaction(models.Model):
     STATUS_CHOICES = [
@@ -87,35 +117,56 @@ class Transaction(models.Model):
         ('electricity', 'Electricity Payment'),
         ('school_fees', 'School Fees Payment'),
         ('waec', 'WAEC Result Check'),
-        ('wallet_transfer', 'Wallet to Bank Transfer'),  # ✅ New
+        ('wallet_to_wallet', 'Wallet to Wallet Transfer'),
+        ('wallet_to_bank', 'Wallet to Bank Transfer'),
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    wallet = models.ForeignKey('transactions.Wallet', on_delete=models.CASCADE)
+    wallet = models.ForeignKey('Wallet', on_delete=models.CASCADE, null=True, blank=True)  # Wallet initiating the transaction
 
-    service_type = models.CharField(max_length=50, choices=SERVICE_TYPES, null=True, blank=True)
+    # Recipient details (for wallet-to-bank)
+    recipient_name = models.CharField(max_length=150, null=True, blank=True)
+    account_number = models.CharField(max_length=20, null=True, blank=True)
+    bank_code = models.CharField(max_length=20, null=True, blank=True)
+    bank_name = models.CharField(max_length=100, null=True, blank=True)
+
+    # Recipient details (for wallet-to-wallet)
+    recipient_wallet_id = models.CharField(max_length=20, null=True, blank=True)
+
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    service_type = models.CharField(max_length=50, choices=SERVICE_TYPES)
 
-    # Paystack/Transaction identifiers
+    # Transaction metadata
+    external_id = models.CharField(max_length=100, unique=True, editable=False)
     transaction_id = models.CharField(max_length=100, unique=True, editable=False, blank=True)
     reference = models.CharField(max_length=100, unique=True, editable=False, blank=True)
+    transaction_reference = models.CharField(max_length=100, unique=True, editable=False, blank=True)
+    transfer_note = models.CharField(max_length=255, null=True, blank=True)
+    confirm_transfer = models.BooleanField(default=False)
+    description = models.TextField(null=True, blank=True)  # ✅ Fixed: this is the correct way
 
-    # Bank transfer info (only used if service_type == wallet_transfer)
-    bank_name = models.CharField(max_length=100, null=True, blank=True)
-    account_number = models.CharField(max_length=20, null=True, blank=True)
-
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
+        # Ensure the wallet exists before saving
+        if self.wallet and not Wallet.objects.filter(id=self.wallet.id).exists():
+            raise ValueError("The referenced wallet does not exist.")
+
+        # Generate unique identifiers if not provided
+        if not self.external_id:
+            self.external_id = uuid.uuid4().hex
         if not self.transaction_id:
             self.transaction_id = f"TXN-{uuid.uuid4().hex[:10].upper()}"
         if not self.reference:
             self.reference = uuid.uuid4().hex
+        if not self.transaction_reference:
+            self.transaction_reference = f"TR-{uuid.uuid4().hex[:10].upper()}"
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.user.username} - {self.service_type or 'Transfer'} - {self.status}"
+        return f"{self.user.username} - {self.service_type} - {self.status}"
+
 
 
 
@@ -130,7 +181,7 @@ class Bank(models.Model):
 
 # models.py
 class UserBank(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     bank_name = models.CharField(max_length=100)
     account_number = models.CharField(max_length=20)
     account_name = models.CharField(max_length=255)
@@ -139,9 +190,35 @@ class UserBank(models.Model):
     def get_balance(self):
         # Assume you store balance
         return Decimal('5000.00')
+    
 
+
+from django.db import models
+from django.contrib.auth.models import User
 
 class Transfer(models.Model):
+    TRANSFER_TYPE_CHOICES = (
+        ('wallet', 'Wallet Transfer'),
+        ('bank', 'Bank Transfer'),
+    )
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    )
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    transfer_type = models.CharField(max_length=20, choices=TRANSFER_TYPE_CHOICES)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    related_id = models.PositiveIntegerField(help_text="ID of WalletTransfer or BankTransfer")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_transfer_type_display()} | {self.user.username} | {self.amount}"
+
+
+
+class BankTransfer(models.Model):
     sender_wallet = models.ForeignKey('Wallet', related_name='sent_transfers', on_delete=models.CASCADE)
     recipient_wallet = models.ForeignKey('Wallet', related_name='received_transfers', on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
@@ -164,11 +241,37 @@ class Transfer(models.Model):
             raise ValueError("Amount must be greater than zero.")
         if self.sender_wallet.balance < self.amount + self.fee:
             raise ValueError("Insufficient balance in the sender's wallet.")
-        super(Transfer, self).save(*args, **kwargs)
+        super(BankTransfer, self).save(*args, **kwargs)
         self.sender_wallet.balance -= (self.amount + self.fee)
         self.sender_wallet.save()
         self.recipient_wallet.balance += self.amount
         self.recipient_wallet.save()
+
+
+from django.db import models
+from django.contrib.auth.models import User
+
+class WalletTransfer(models.Model):
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE,
+        related_name='sent_wallet_transfers'
+    )
+    recipient_wallet_id = models.CharField(max_length=30)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transfer_note = models.TextField(blank=True, null=True)
+    transfer_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('completed', 'Completed'), ('failed', 'Failed')], default='pending')
+
+    def __str__(self):
+        return f"Transfer from {self.sender.username} to {self.recipient_wallet_id} - {self.status}"
+
+    class Meta:
+        verbose_name = 'Wallet Transfer'
+        verbose_name_plural = 'Wallet Transfers'
+        ordering = ['-transfer_date']
+
+
 
 class TransferRecipient(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -220,3 +323,5 @@ class DebitCard(models.Model):
         cipher_suite = Fernet('your_secret_key')
         self.card_number = cipher_suite.decrypt(self.card_number.encode()).decode()
         self.cvv = cipher_suite.decrypt(self.cvv.encode()).decode()
+
+

@@ -22,7 +22,7 @@ from rest_framework.response import Response
 from django.http import JsonResponse
 from django.utils import timezone
 from .models import Wallet, Payment, Transaction
-from .forms import ProfileForm, AddMoneyForm, TransferForm, WalletForm, TransferForm
+from .forms import ProfileForm, AddMoneyForm, BankTransferForm, WalletForm, WalletTransferForm
 from decimal import Decimal, InvalidOperation
 from dotenv import load_dotenv
 from django.http import JsonResponse, HttpResponse
@@ -32,7 +32,7 @@ from django.contrib.auth import get_user_model
 from django.views import View
 import requests
 from django.conf import settings
-from .models import Wallet, Transaction,  Bank, Payment, TransferRecipient, Transfer
+from .models import Wallet, Transaction,  Bank, Payment, TransferRecipient, BankTransfer, WalletTransfer
 from apps.services.paystack import PaystackAPI
 from apps.services.paystack import PaystackAPI
 from django.shortcuts import render, redirect
@@ -118,29 +118,6 @@ def paystack_payment(request):
     return render(request, 'paystack_payment.html')
 
 
-@login_required
-def transaction_view(request):
-    """View to display the transaction form and handle transaction creation."""
-    wallet = get_object_or_404(Wallet, user=request.user)
-
-    if request.method == 'POST':
-        form = TransactionForm(request.POST)
-        if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.wallet = wallet  # Associate the transaction with the wallet
-            transaction.save()
-            return redirect('transactions:transaction_success', transaction_id=transaction.id)
-    else:
-        form = TransactionForm()
-
-    transactions = Transaction.objects.filter(wallet=wallet)
-
-    context = {
-        'form': form,
-        'transactions': transactions,
-    }
-
-    return render(request, 'transactions/transaction_form.html', context)
 
 
 def transaction_success(request, transaction_id):
@@ -461,47 +438,6 @@ class UpdateProfileView(APIView):
 
 
 
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from .models import Wallet
-
-@login_required
-def get_wallet_balance(request):
-    """View for getting the user's wallet balance."""
-    try:
-        wallet = get_object_or_404(Wallet, user=request.user)
-        return JsonResponse({'balance': wallet.balance})
-    except Wallet.DoesNotExist:
-        return JsonResponse({'error': 'Wallet not found for the user'}, status=404)
-
-
-@login_required
-def process_wallet_payment(request):
-    """View for processing payments using the user's wallet balance."""
-    if request.method == 'POST':
-        amount = Decimal(request.POST.get('amount'))
-        service_id = request.POST.get('service_id')
-        wallet = get_object_or_404(Wallet, user=request.user)
-
-        if wallet.balance < amount:
-            return JsonResponse({"error": "Insufficient funds in wallet."}, status=400)
-
-        wallet.balance -= amount
-        wallet.save()
-
-        # Record the transaction
-        Transaction.objects.create(
-            user=request.user,
-            amount=amount,
-            type='debit',
-            description=f'Payment for service {service_id}',
-            date=timezone.now(),
-            status='Completed'
-        )
-
-        return JsonResponse({"message": "Payment successful!"}, status=200)
-
-    return JsonResponse({"error": "Invalid request method."}, status=405)
 
 @login_required
 def process_debit_card_payment(request):
@@ -554,8 +490,6 @@ from django.contrib.auth.decorators import login_required
 def add_money(request):
     """View for adding money to the user's wallet."""
 
-    wallet, created = Wallet.objects.get_or_create(user=request.user)
-
     if request.method == 'POST':
         form = AddMoneyForm(request.POST)
         if form.is_valid():
@@ -582,7 +516,7 @@ def add_money(request):
             messages.error(request, 'Please correct the errors below.')
     else:
         form = AddMoneyForm()
-
+    wallet, created = Wallet.objects.get_or_create(user=request.user)
     transactions = Transaction.objects.filter(wallet=wallet).order_by('-created_at')[:10]
 
     context = {
@@ -659,6 +593,144 @@ def success_page(request):
     }
 
     return render(request, 'transactions/success_page.html', context)
+
+
+
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.conf import settings
+from decimal import Decimal
+from .models import Wallet, Transaction, Profile
+from .forms import BankTransferForm
+import requests
+from django.db import transaction as db_transaction
+
+
+@login_required
+def bank_transfer(request):
+    user = request.user
+    wallet = get_object_or_404(Wallet, user=user)
+    transactions = Transaction.objects.filter(user=user).order_by('-created_at')[:10]
+
+    if request.method == 'POST':
+        form = BankTransferForm(request.POST)
+        if form.is_valid():
+            amount = form.cleaned_data['amount']
+            recipient_name = form.cleaned_data['recipient_name']
+            account_number = form.cleaned_data['account_number']
+            bank_code = form.cleaned_data['bank_code']
+            transfer_note = form.cleaned_data['transfer_note'] or "Bank Transfer"
+            currency = form.cleaned_data['currency']
+
+            if wallet.balance < amount:
+                messages.error(request, "Insufficient wallet balance.")
+                return redirect('transactions:bank_transfer')
+
+            headers = {
+                "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
+                "Content-Type": "application/json",
+            }
+
+            recipient_data = {
+                "type": "nuban",
+                "name": recipient_name,
+                "account_number": account_number,
+                "bank_code": bank_code,
+                "currency": currency  # Now using the currency from form
+            }
+
+            try:
+                recipient_res = requests.post(
+                    "https://api.paystack.co/transferrecipient",
+                    headers=headers,
+                    json=recipient_data,
+                    timeout=10
+                )
+
+                if recipient_res.status_code == 201:
+                    recipient_code = recipient_res.json()['data']['recipient_code']
+
+                    # Debit wallet immediately
+                    wallet.balance -= amount
+                    wallet.save()
+
+                    transfer_data = {
+                        "source": "balance",
+                        "reason": transfer_note,
+                        "amount": int(amount * 100),  # in kobo
+                        "recipient": recipient_code
+                    }
+
+                    transfer_res = requests.post(
+                        "https://api.paystack.co/transfer",
+                        headers=headers,
+                        json=transfer_data,
+                        timeout=10
+                    )
+
+                    if transfer_res.status_code in [200, 201]:
+                        transfer_info = transfer_res.json()['data']
+                        transfer_status = transfer_info.get('status', 'pending')
+
+                        # Save transaction
+                        Transaction.objects.create(
+                            user=user,
+                            recipient_name=recipient_name,
+                            account_number=account_number,
+                            bank_code=bank_code,
+                            amount=amount,
+                            status=transfer_status,
+                            external_id=transfer_info['id'],
+                            transfer_note=transfer_note,
+                        )
+
+                        if transfer_status == 'success':
+                            messages.success(request, "✅ Transfer successful!")
+                        elif transfer_status == 'pending':
+                            messages.info(request, "⏳ Transfer initiated. Waiting for confirmation.")
+                        else:
+                            messages.warning(request, f"⚠️ Transfer status: {transfer_status.capitalize()}")
+
+                        return redirect('transactions:bank_transfer')
+                    else:
+                        error_msg = transfer_res.json().get('message', 'Unknown error during transfer.')
+                        print("Transfer error:", transfer_res.json())
+                        messages.error(request, f"❌ Transfer failed: {error_msg}")
+                        return redirect('transactions:bank_transfer')
+                else:
+                    error_msg = recipient_res.json().get('message', 'Invalid recipient data.')
+                    print("Recipient error:", recipient_res.json())
+                    messages.error(request, f"❌ Could not create recipient: {error_msg}")
+                    return redirect('transactions:bank_transfer')
+
+            except requests.RequestException as e:
+                print("Request exception:", e)
+                messages.error(request, "❌ Network error. Please try again later.")
+                return redirect('transactions:bank_transfer')
+
+        else:
+            print(form.errors)
+            messages.error(request, "❌ There was an error with your form. Please check and try again.")
+            return redirect('transactions:bank_transfer')
+    else:
+        form = BankTransferForm()
+
+    context = {
+        'form': form,
+        'wallet': wallet,
+        'wallet_balance': wallet.balance,
+        'wallet_currencies': [
+            {"currency": "NGN", "symbol": "₦", "balance": wallet.balance}
+        ],
+        'transactions': transactions,
+    }
+    return render(request, 'transactions/bank_transfer.html', context)
 
 
 
@@ -760,239 +832,189 @@ def wallet_balance(request):
     return render(request, 'transactions/wallet_balance.html', context)
 
 
-from decimal import Decimal
-import requests
-from django.conf import settings
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.shortcuts import render, redirect
 
-from .models import Wallet, Transaction
-from .forms import TransferForm
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required  # You missed importing this in the snippet
+from .models import Wallet
 
 @login_required
-def transfer(request):
-    wallet = Wallet.objects.filter(user=request.user).first()
-    if not wallet:
-        messages.error(request, "You don't have a wallet yet. Please create one first.")
-        return redirect('create_wallet')
+def get_wallet_balance(request):
+    """Return the user's wallet balance as JSON."""
+    wallet = get_object_or_404(Wallet, user=request.user)
+    return JsonResponse({
+        'balance': str(wallet.balance)  # Always return as string to avoid float issues in JSON
+    })
+
+
+
+@login_required
+def process_wallet_payment(request):
+    """View for processing payments using the user's wallet balance."""
+    if request.method == 'POST':
+        amount = Decimal(request.POST.get('amount'))
+        service_id = request.POST.get('service_id')
+        wallet = get_object_or_404(Wallet, user=request.user)
+
+        if wallet.balance < amount:
+            return JsonResponse({"error": "Insufficient funds in wallet."}, status=400)
+
+        wallet.balance -= amount
+        wallet.save()
+
+        # Record the transaction
+        Transaction.objects.create(
+            user=request.user,
+            amount=amount,
+            type='debit',
+            description=f'Payment for service {service_id}',
+            date=timezone.now(),
+            status='Completed'
+        )
+
+        return JsonResponse({"message": "Payment successful!"}, status=200)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+
+from decimal import Decimal
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction as db_transaction
+from django.shortcuts import get_object_or_404, redirect, render
+from .models import Wallet, Transaction
+
+@login_required
+def wallet_transfer(request):
+    user = request.user
+    wallet = get_object_or_404(Wallet, user=user)
+    transactions = Transaction.objects.filter(user=user).order_by('-created_at')[:10]
 
     if request.method == 'POST':
-        form = TransferForm(request.POST)
-        if form.is_valid():
-            amount = form.cleaned_data['amount']
-            recipient_name = form.cleaned_data['recipient_name']
-            account_number = form.cleaned_data['account_number']
-            bank_code = form.cleaned_data['bank_code']
-            transfer_note = form.cleaned_data.get('transfer_note', 'Wallet Withdrawal')
-            currency = form.cleaned_data['currency']
+        print("Form data received:", request.POST)  # Debug print to check form data
+        service_type = request.POST.get('service_type')  # 'wallet_to_wallet' or 'wallet_to_bank'
+        amount = request.POST.get('amount')
+        recipient_wallet_id = request.POST.get('recipient_wallet_id')
 
-            if amount <= Decimal('0'):
-                form.add_error('amount', 'Transfer amount must be positive.')
-            elif wallet.balance < amount:
-                form.add_error('amount', 'Insufficient wallet balance.')
+        # Validation
+        if not amount or Decimal(amount) <= 0:
+            messages.error(request, 'Please enter a valid amount greater than zero.')
+            print("Amount validation failed.")
+            return redirect('transactions:wallet_transfer')
 
-            if form.errors:
-                return render(request, 'transactions/transfer.html', {'form': form, 'wallet': wallet})
+        amount = Decimal(amount)
 
-            headers = {
-                'Authorization': f'Bearer {settings.PAYSTACK_SECRET_KEY}',
-                'Content-Type': 'application/json',
-            }
+        if service_type == 'wallet_to_wallet':
+            if not recipient_wallet_id:
+                messages.error(request, 'Please provide a recipient wallet ID.')
+                print("Recipient wallet ID missing.")
+                return redirect('transactions:wallet_transfer')
 
-            # Step 1: Create a Transfer Recipient
-            recipient_payload = {
-                "type": "nuban",
-                "name": recipient_name,
-                "account_number": account_number,
-                "bank_code": bank_code,
-                "currency": currency,
-            }
+            # Validate recipient wallet
             try:
-                recipient_response = requests.post(
-                    'https://api.paystack.co/transferrecipient',
-                    json=recipient_payload,
-                    headers=headers,
-                    timeout=10
-                )
-                recipient_response.raise_for_status()
-                recipient_data = recipient_response.json()
-            except requests.RequestException:
-                form.add_error(None, "Network error while creating recipient. Please try again.")
-                return render(request, 'transactions/transfer.html', {'form': form, 'wallet': wallet})
+                recipient_wallet = Wallet.objects.get(wallet_id=recipient_wallet_id)
+                recipient_user = recipient_wallet.user
+            except Wallet.DoesNotExist:
+                messages.error(request, 'Recipient wallet not found.')
+                print("Recipient wallet not found.")
+                return redirect('transactions:wallet_transfer')
 
-            if not recipient_data.get('status'):
-                form.add_error(None, recipient_data.get('message', 'Failed to create transfer recipient.'))
-                return render(request, 'transactions/transfer.html', {'form': form, 'wallet': wallet})
+        elif service_type == 'wallet_to_bank':
+            messages.error(request, 'Wallet-to-bank transfer is not supported yet.')
+            print("Wallet to bank transfer attempted.")
+            return redirect('transactions:wallet_transfer')
 
-            recipient_code = recipient_data['data']['recipient_code']
+        else:
+            messages.error(request, 'Invalid service type.')
+            print(f"Invalid service type: {service_type}")
+            return redirect('transactions:wallet_transfer')
 
-            # Step 2: Initiate Transfer
-            transfer_payload = {
-                "source": "balance",
-                "amount": int(amount * 100),  # Paystack requires amount in kobo
-                "recipient": recipient_code,
-                "reason": transfer_note,
-            }
-            try:
-                transfer_response = requests.post(
-                    'https://api.paystack.co/transfer',
-                    json=transfer_payload,
-                    headers=headers,
-                    timeout=10
-                )
-                transfer_response.raise_for_status()
-                transfer_data = transfer_response.json()
-            except requests.RequestException:
-                form.add_error(None, "Network error while initiating transfer. Please try again.")
-                return render(request, 'transactions/transfer.html', {'form': form, 'wallet': wallet})
+        # Balance check
+        if wallet.balance < amount:
+            messages.error(request, 'Insufficient balance.')
+            print("Insufficient balance.")
+            return redirect('transactions:wallet_transfer')
 
-            if transfer_data.get('status'):
-                # Deduct from Wallet
+        # Process transaction
+        try:
+            with db_transaction.atomic():
+                # Deduct from sender's wallet
                 wallet.balance -= amount
                 wallet.save()
+                print(f"Sender wallet updated: {wallet.balance}")
 
-                # Record Transaction
+                # Credit recipient's wallet
+                recipient_wallet.balance += amount
+                recipient_wallet.save()
+                print(f"Recipient wallet updated: {recipient_wallet.balance}")
+
+                # Create transaction record for sender
                 Transaction.objects.create(
+                    user=user,
                     wallet=wallet,
                     amount=amount,
-                    transaction_type='TRANSFER',
-                    recipient_name=recipient_name,
-                    transaction_reference=transfer_data['data']['transfer_code'],
-                    currency=currency,
-                    transfer_note=transfer_note,
+                    status='completed',
+                    service_type=service_type,
+                    recipient_wallet_id=recipient_wallet.wallet_id,
+                    recipient_name=recipient_user.username,
                 )
 
-                messages.success(request, 'Bank transfer initiated successfully!')
-                return redirect('transfer_success')
-            else:
-                form.add_error(None, transfer_data.get('message', 'Transfer failed. Please try again.'))
+                # Create transaction record for recipient (optional)
+                Transaction.objects.create(
+                    user=recipient_user,
+                    wallet=recipient_wallet,
+                    amount=amount,
+                    status='completed',
+                    service_type=service_type,
+                    recipient_wallet_id=recipient_wallet.wallet_id,
+                    recipient_name=user.username,
+                )
 
-    else:
-        form = TransferForm()
+                messages.success(
+                    request,
+                    f'Successfully transferred {amount} to {recipient_user.username} (Wallet ID: {recipient_wallet.wallet_id}).'
+                )
+                return redirect('transactions:wallet_transfer')
+
+        except Exception as e:
+            messages.error(request, 'Something went wrong, please try again later.')
+            print(f"Wallet transfer error for user {user.username}: {e}")
+            return redirect('transactions:wallet_transfer')
 
     context = {
-        'form': form,
         'wallet': wallet,
+        'wallet_balance': wallet.balance,
         'wallet_currencies': [
             {"currency": "NGN", "symbol": "₦", "balance": wallet.balance}
         ],
-        'transactions': Transaction.objects.filter(wallet=wallet).order_by('-created_at')[:10],  # show latest 10
-    }
-    return render(request, 'transactions/transfer.html', context)
-
-
-@login_required
-def transfer_success(request):
-    wallet = Wallet.objects.filter(user=request.user).first()
-    balance = wallet.balance if wallet else 0
-    transactions = Transaction.objects.filter(wallet=wallet)  # Use wallet for transaction filtering
-
-    context = {
-        'wallet': wallet,
-        'wallet_currencies': [
-            {"currency": "NGN", "symbol": "₦", "balance": balance}
-        ],
         'transactions': transactions,
     }
-    return render(request, 'transactions/transfer_success.html', context)
+    return render(request, 'transactions/wallet_transfer.html', context)
 
 
-# views.py - Handling Paystack webhook
-import json
-import hmac
-import hashlib
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
-from .models import Transaction
-
-@csrf_exempt
-def paystack_webhook(request):
-    # Capture the incoming Paystack webhook data
-    webhook_data = json.loads(request.body)
-
-    # Validate Paystack signature to ensure the request is from Paystack
-    paystack_secret = settings.PAYSTACK_SECRET_KEY
-    signature = request.headers.get('x-paystack-signature')
-    
-    if not signature:
-        return JsonResponse({'status': 'error', 'message': 'Signature missing'}, status=400)
-
-    # Compute signature from the request body using the Paystack secret key
-    computed_signature = hmac.new(
-        paystack_secret.encode('utf-8'),
-        msg=request.body,
-        digestmod=hashlib.sha512
-    ).hexdigest()
-
-    # Compare the computed signature to the one in the headers
-    if signature != computed_signature:
-        return JsonResponse({'status': 'error', 'message': 'Invalid signature'}, status=400)
-
-    # Handle different Paystack events
-    if webhook_data['event'] == 'transfer.success':
-        transaction_id = webhook_data['data']['id']
-        transfer_code = webhook_data['data']['reference']
-        
-        try:
-            # Fetch the corresponding transaction
-            transaction = Transaction.objects.get(transaction_reference=transfer_code)
-            
-            # Update the transaction status to SUCCESS
-            transaction.status = 'SUCCESS'
-            transaction.save()
-
-            # You can notify the user here (e.g., via email, SMS, etc.)
-            # For example, you could call a function to send a confirmation email
-
-        except Transaction.DoesNotExist:
-            # Handle the case where the transaction does not exist in the database
-            return JsonResponse({'status': 'error', 'message': 'Transaction not found'}, status=404)
-
-        return JsonResponse({'status': 'success'}, status=200)
-
-    elif webhook_data['event'] == 'transfer.failed':
-        transaction_id = webhook_data['data']['id']
-        transfer_code = webhook_data['data']['reference']
-
-        try:
-            # Fetch the corresponding transaction
-            transaction = Transaction.objects.get(transaction_reference=transfer_code)
-            
-            # Update the transaction status to FAILED
-            transaction.status = 'FAILED'
-            transaction.save()
-
-            # Notify the user about the failure if necessary
-
-        except Transaction.DoesNotExist:
-            # Handle the case where the transaction does not exist in the database
-            return JsonResponse({'status': 'error', 'message': 'Transaction not found'}, status=404)
-
-        return JsonResponse({'status': 'failed'}, status=200)
-
-    # If the event type is unknown, return an error response
-    return JsonResponse({'status': 'error', 'message': 'Unknown event'}, status=400)
-
-
-        
 
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Wallet
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def wallet_summary(request):
     user = request.user
-    profile = user.profile
-    balance = profile.wallet_balance  # assuming this field exists
-    return Response({
-        "balance": f"₦{balance:.2f}",
-        "next_bill": "April 28, 2025",  # Replace with real bill query
-        "subscriptions_due": 2
-    })
+
+    try:
+        wallet = Wallet.objects.get(user=user)
+        data = {
+            'wallet_id': wallet.wallet_id,
+            'balance': float(wallet.balance),  # Ensure it's JSON serializable
+            'currency': 'NGN',  # Or use wallet.currency if you store this
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    except Wallet.DoesNotExist:
+        return Response({'error': 'Wallet not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
 # Consolidated Wallet Transaction View for Web (Form-based)
@@ -1009,15 +1031,17 @@ def wallet_transaction_view(request):
                 messages.error(request, 'Amount must be greater than zero.')
                 return redirect('transactions:wallet_transaction')
 
+            # Handle wallet transactions (add or withdraw)
+            transaction_reference = generate_transaction_reference()  # Generate a unique reference
+            
             if transaction_type == 'add':
                 wallet.balance += amount
                 wallet.save()
-                messages.success(request, f'You have successfully added N{amount} to your wallet.')
-
+                messages.success(request, f'You have successfully added N{amount} to your wallet. Reference: {transaction_reference}')
             elif transaction_type == 'withdraw' and wallet.balance >= amount:
                 wallet.balance -= amount
                 wallet.save()
-                messages.success(request, f'You have successfully withdrawn N{amount} from your wallet.')
+                messages.success(request, f'You have successfully withdrawn N{amount} from your wallet. Reference: {transaction_reference}')
             elif transaction_type == 'withdraw' and wallet.balance < amount:
                 messages.error(request, 'Insufficient funds in your wallet.')
 
@@ -1026,6 +1050,336 @@ def wallet_transaction_view(request):
         form = WalletForm(initial={'wallet': wallet})
 
     return render(request, 'transactions/wallet_transaction.html', {'form': form})
+
+def generate_transaction_reference():
+    # Generate a unique transaction reference
+    import uuid
+    return str(uuid.uuid4())
+
+        
+
+import json
+import requests
+from django.conf import settings
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_POST
+from django.contrib.auth.decorators import login_required
+from .models import Wallet, Transaction  # Adjust the import path if needed
+
+# Load the Paystack Secret Key from settings (linked to .env)
+PAYSTACK_SECRET_KEY = settings.PAYSTACK_SECRET_KEY
+
+
+def get_bank_code(bank_name):
+    bank_mapping = {
+        "Access Bank": "044",
+        "Guaranty Trust Bank": "058",
+        "First Bank": "011",
+        "United Bank for Africa": "033",
+        "Zenith Bank": "057",
+        "Stanbic IBTC Bank": "068",
+        "Ecobank Nigeria": "050",
+        "Fidelity Bank": "070",
+        "Diamond Bank": "063",
+        "Union Bank": "032",
+        "Wema Bank": "035",
+        "Skye Bank": "076",
+        "Sterling Bank": "232",
+        "Standard Chartered Bank": "068",
+        "Citibank Nigeria": "023",
+        "Keystone Bank": "082",
+        "Unity Bank": "215",
+        "Jaiz Bank": "301",
+        "Suntrust Bank": "100",
+        "Providus Bank": "101",
+        "VFD Microfinance Bank": "080",
+        "Heritage Bank": "030",
+        "Polaris Bank": "076",
+        "Titan Trust Bank": "313",
+        "MFB Bank": "500",
+        "Mainstreet Bank": "070",
+        "FBNQuest Merchant Bank": "091",
+        "Rand Merchant Bank": "077",
+        "Opay": "999",
+        "Moniepoint": "223",
+        "Taj Bank": "318",
+    }
+    return bank_mapping.get(bank_name)
+
+
+@csrf_exempt
+@require_GET
+def resolve_account_name(request):
+    account_number = request.GET.get('account_number')
+    bank_code = request.GET.get('bank_code')
+
+    if not account_number or not bank_code:
+        return JsonResponse({'success': False, 'error': 'Account number and bank code are required'}, status=400)
+
+    url = f"https://api.paystack.co/bank/resolve?account_number={account_number}&bank_code={bank_code}"
+    headers = {
+        "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+        result = response.json()
+
+        if response.status_code == 200 and result.get('status') is True:
+            return JsonResponse({
+                'success': True,
+                'account_name': result['data']['account_name'],
+                'account_number': result['data']['account_number']
+            })
+        else:
+            return JsonResponse({'success': False, 'error': result.get('message', 'Could not resolve account')}, status=400)
+
+    except requests.RequestException as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def transfer_success(request):
+    wallet = Wallet.objects.filter(user=request.user).first()
+    balance = wallet.balance if wallet else 0
+    transactions = Transaction.objects.filter(wallet=wallet)
+
+    context = {
+        'wallet': wallet,
+        'wallet_currencies': [
+            {"currency": "NGN", "symbol": "₦", "balance": balance}
+        ],
+        'transactions': transactions,
+    }
+    return render(request, 'transactions/transfer_success.html', context)
+
+
+@csrf_exempt
+@require_POST
+def create_paystack_recipient(request):
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON format'}, status=400)
+
+    name = data.get('name')
+    account_number = data.get('account_number')
+    bank_name = data.get('bank_name')
+
+    if not all([name, account_number, bank_name]):
+        return JsonResponse({'success': False, 'error': 'Missing required fields'}, status=400)
+
+    bank_code = get_bank_code(bank_name)
+    print(f"Bank Name: {bank_name}, Bank Code: {bank_code}")  # For debugging
+
+    if not bank_code:
+        return JsonResponse({'success': False, 'error': 'Invalid bank name or unsupported bank'}, status=400)
+
+    recipient_data = {
+        "type": "individual",
+        "name": name,
+        "account_number": account_number,
+        "bank_code": bank_code,
+    }
+
+    headers = {
+        "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        response = requests.post("https://api.paystack.co/transferrecipient", headers=headers, json=recipient_data)
+        print(f"Paystack response: {response.status_code} - {response.text}")
+
+        if response.status_code == 200:
+            result = response.json()
+            if result.get('status'):
+                return JsonResponse({'success': True, 'recipient_code': result['data']['recipient_code']})
+            else:
+                return JsonResponse({'success': False, 'error': result.get('message', 'Recipient creation failed')}, status=400)
+        else:
+            return JsonResponse({'success': False, 'error': f"Paystack API Error: {response.text}"}, status=400)
+
+    except requests.exceptions.RequestException as e:
+        return JsonResponse({'success': False, 'error': f"Error contacting Paystack: {str(e)}"}, status=500)
+
+
+def initiate_transfer(amount, recipient_code, reason):
+    url = "https://api.paystack.co/transfer"
+    headers = {
+        "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
+        "Content-Type": "application/json",
+    }
+    data = {
+        "source": "balance",
+        "amount": int(amount * 100),  # Convert Naira to kobo
+        "recipient": recipient_code,
+        "reason": reason
+    }
+    response = requests.post(url, headers=headers, json=data)
+    return response.json()
+
+
+# views.py - Handling Paystack webhook
+
+import json
+import hmac
+import hashlib
+import logging
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+from .models import Transaction
+
+# Initialize logger
+logger = logging.getLogger(__name__)
+
+@csrf_exempt
+def paystack_webhook(request):
+    # Validate that the request has a body
+    if not request.body:
+        return JsonResponse({'status': 'error', 'message': 'Empty request body'}, status=400)
+
+    try:
+        # Capture and parse the incoming Paystack webhook data
+        webhook_data = json.loads(request.body)
+    except json.JSONDecodeError:
+        logger.error("Invalid JSON payload received from Paystack.")
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+
+    # Validate Paystack signature to ensure the request is genuine
+    paystack_secret = settings.PAYSTACK_SECRET_KEY
+    signature = request.headers.get('x-paystack-signature')
+
+    if not signature:
+        logger.warning("Signature missing in Paystack webhook.")
+        return JsonResponse({'status': 'error', 'message': 'Signature missing'}, status=400)
+
+    computed_signature = hmac.new(
+        paystack_secret.encode('utf-8'),
+        msg=request.body,
+        digestmod=hashlib.sha512
+    ).hexdigest()
+
+    if signature != computed_signature:
+        logger.warning("Invalid signature detected in Paystack webhook.")
+        return JsonResponse({'status': 'error', 'message': 'Invalid signature'}, status=400)
+
+    event = webhook_data.get('event')
+    data = webhook_data.get('data', {})
+
+    # Centralized handler for transfer events
+    def handle_transfer_update(status):
+        transfer_code = data.get('reference')
+        if not transfer_code:
+            logger.error("Reference missing in webhook data.")
+            return JsonResponse({'status': 'error', 'message': 'Reference missing'}, status=400)
+
+        try:
+            transaction = Transaction.objects.get(transaction_reference=transfer_code)
+            transaction.status = status
+            transaction.save()
+            logger.info(f"Transaction {transfer_code} updated to {status}.")
+            # Optionally notify user here
+            return JsonResponse({'status': status.lower()}, status=200)
+        except Transaction.DoesNotExist:
+            logger.error(f"Transaction not found for reference {transfer_code}.")
+            return JsonResponse({'status': 'error', 'message': 'Transaction not found'}, status=404)
+
+    # Event dispatcher
+    event_handlers = {
+        'transfer.success': lambda: handle_transfer_update('SUCCESS'),
+        'transfer.failed': lambda: handle_transfer_update('FAILED'),
+        # Add more event handlers here as needed
+    }
+
+    handler = event_handlers.get(event)
+    if handler:
+        return handler()
+
+    logger.warning(f"Unhandled Paystack event received: {event}")
+    return JsonResponse({'status': 'error', 'message': 'Unhandled event'}, status=400)
+
+
+
+@login_required
+def transaction_form(request, bank_id):
+    """Handle the transaction form."""
+    # Fetch the selected bank using the bank_id passed in the URL
+    bank = get_object_or_404(UserBank, id=bank_id, user=request.user)
+
+    # Handle the transaction on POST request
+    if request.method == 'POST':
+        # Get the transaction amount entered by the user
+        try:
+            amount = Decimal(request.POST.get('amount'))  # Ensure the amount is a decimal number
+        except (ValueError, TypeError):
+            messages.error(request, "Invalid amount entered.")
+            return redirect('transactions:transaction_form', bank_id=bank.id)
+
+        # Check if the amount is valid
+        if amount <= 0:
+            messages.error(request, "Transaction amount must be greater than zero.")
+            return redirect('transactions:transaction_form', bank_id=bank.id)
+
+        # Check if the user has sufficient funds
+        user_balance = bank.get_balance()
+
+        if amount > user_balance:
+            messages.error(request, "Insufficient funds for this transaction!")
+            return redirect('transactions:transaction_form', bank_id=bank.id)
+
+        # Create the transaction
+        transaction = Transaction.objects.create(
+            user=request.user,
+            bank=bank,
+            amount=amount,
+            status='pending'  # Assuming 'pending' is the initial status
+        )
+
+        # Optionally, you can update the bank balance if needed
+        bank.update_balance(-amount)  # Deduct the transaction amount from user's bank balance (you would need to implement this)
+
+        # Optionally, send a notification or email about the transaction
+        messages.success(request, f"Transaction of {amount} initiated successfully.")
+
+        # Redirect to transaction success page
+        return redirect('transactions:transaction_success', transaction_id=transaction.id)
+
+    return render(request, 'transactions/transaction_form.html', {'bank': bank})
+
+
+@login_required
+def transaction_view(request):
+    """View to display the transaction form and handle transaction creation."""
+    wallet = get_object_or_404(Wallet, user=request.user)
+
+    if request.method == 'POST':
+        form = TransactionForm(request.POST)
+        if form.is_valid():
+            transaction = form.save(commit=False)
+            transaction.wallet = wallet  # Associate the transaction with the wallet
+            transaction.transaction_reference = generate_transaction_reference()  # Add a unique reference
+            transaction.save()
+            return redirect('transactions:transaction_success', transaction_id=transaction.id)
+    else:
+        form = TransactionForm()
+
+    transactions = Transaction.objects.filter(wallet=wallet)
+
+    context = {
+        'form': form,
+        'transactions': transactions,
+    }
+
+    return render(request, 'transactions/transaction_form.html', context)
+
+def generate_transaction_reference():
+    # You could generate a unique reference, e.g., using a UUID or a random string
+    import uuid
+    return str(uuid.uuid4())
 
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -1125,104 +1479,6 @@ def manage_fund(request):
     return render(request, 'transactions/manage_fund.html', {'form': form, 'wallet': wallet})
 
 
-# Transfer Money View for Transferring Funds
-@login_required
-def transfer_money(request):
-    if request.method == "POST":
-        amount = request.POST.get("amount")
-        bank_name = request.POST.get("bank_name")
-        account_number = request.POST.get("account_number")
-        phone_number = request.POST.get("phone_number")
-
-        if not amount or not bank_name or not account_number or not phone_number:
-            messages.error(request, "All fields are required.")
-            return redirect('transactions:funds_transfer')
-
-        try:
-            amount = Decimal(amount)
-        except (ValueError, InvalidOperation):
-            messages.error(request, "Invalid amount format.")
-            return redirect('transactions:funds_transfer')
-
-        user_wallet = request.user.wallet
-        if user_wallet.balance < amount:
-            messages.error(request, "Insufficient Wallet Balance!")
-            return redirect('transactions:wallet')
-
-        user_wallet.balance -= amount
-        user_wallet.save()
-
-        transaction_reference = str(uuid.uuid4())
-
-        transfer_data = {
-            "email": request.user.email,
-            "amount": int(amount * 100),
-            "bank": bank_name,
-            "account_number": account_number,
-            "phone": phone_number,
-            "reference": transaction_reference
-        }
-
-        try:
-            transfer_response = paystack.Transfer.create(**transfer_data)
-            if transfer_response["status"] == "success":
-                Transaction.objects.create(
-                    user=request.user,
-                    amount=amount,
-                    reference=transaction_reference,
-                    status='pending'
-                )
-                messages.success(request, f"Transfer of N{amount} to {bank_name} completed successfully.")
-            else:
-                messages.error(request, "Transfer failed. Please check the bank details and try again.")
-        except Exception as e:
-            messages.error(request, f"An error occurred during the transfer: {e}")
-
-        return redirect('transactions:wallet')
-    
-    return render(request, 'transactions/transfer_money.html')
-
-
-# Create Transfer Recipient View for Paystack API Integration
-def create_transfer_recipient(request):
-    if request.method == "POST":
-        name = request.POST.get("name")
-        account_number = request.POST.get("account_number")
-        bank_code = request.POST.get("bank_code")
-
-        url = "https://api.paystack.co/transferrecipient"
-        headers = {
-            "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
-            "Content-Type": "application/json",
-        }
-        data = {
-            "type": "nuban",
-            "name": name,
-            "account_number": account_number,
-            "bank_code": bank_code,
-            "currency": "NGN",
-        }
-
-        try:
-            response = requests.post(url, json=data, headers=headers)
-            if response.status_code == 200:
-                recipient_data = response.json().get("data")
-                recipient = TransferRecipient.objects.create(
-                    user=request.user,
-                    name=name,
-                    account_number=account_number,
-                    bank_code=bank_code,
-                    recipient_code=recipient_data["recipient_code"],
-                )
-                return JsonResponse({"status": "success", "recipient_code": recipient.recipient_code})
-            else:
-                return JsonResponse({"status": "error", "message": response.json()})
-        except requests.exceptions.RequestException as e:
-            return JsonResponse({"status": "error", "message": f"An error occurred: {e}"})
-
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
-
-
 # Change Password View
 @login_required
 def change_password(request):
@@ -1239,51 +1495,6 @@ def change_password(request):
 
 
 
-@login_required
-def transaction_form(request, bank_id):
-    """Handle the transaction form."""
-    # Fetch the selected bank using the bank_id passed in the URL
-    bank = get_object_or_404(UserBank, id=bank_id, user=request.user)
-
-    # Handle the transaction on POST request
-    if request.method == 'POST':
-        # Get the transaction amount entered by the user
-        try:
-            amount = Decimal(request.POST.get('amount'))  # Ensure the amount is a decimal number
-        except (ValueError, TypeError):
-            messages.error(request, "Invalid amount entered.")
-            return redirect('transactions:transaction_form', bank_id=bank.id)
-
-        # Check if the amount is valid
-        if amount <= 0:
-            messages.error(request, "Transaction amount must be greater than zero.")
-            return redirect('transactions:transaction_form', bank_id=bank.id)
-
-        # Check if the user has sufficient funds
-        user_balance = bank.get_balance()
-
-        if amount > user_balance:
-            messages.error(request, "Insufficient funds for this transaction!")
-            return redirect('transactions:transaction_form', bank_id=bank.id)
-
-        # Create the transaction
-        transaction = Transaction.objects.create(
-            user=request.user,
-            bank=bank,
-            amount=amount,
-            status='pending'  # Assuming 'pending' is the initial status
-        )
-
-        # Optionally, you can update the bank balance if needed
-        bank.update_balance(-amount)  # Deduct the transaction amount from user's bank balance (you would need to implement this)
-
-        # Optionally, send a notification or email about the transaction
-        messages.success(request, f"Transaction of {amount} initiated successfully.")
-
-        # Redirect to transaction success page
-        return redirect('transactions:transaction_success', transaction_id=transaction.id)
-
-    return render(request, 'transactions/transaction_form.html', {'bank': bank})
 
 
 from django.contrib.auth.decorators import login_required
@@ -1341,163 +1552,7 @@ def process_bank_view(request, bank_id):
     # If balance is fine, proceed with the transaction form
     return redirect('transactions:transaction_form', bank_id=bank.id)
 
-def get_bank_code(bank_name):
-    bank_mapping = {
-        "Access Bank": "044",
-        "Guaranty Trust Bank": "058",
-        "First Bank": "011",
-        "United Bank for Africa": "033",
-        "Zenith Bank": "057",
-        "Stanbic IBTC Bank": "068",
-        "Ecobank Nigeria": "050",
-        "Fidelity Bank": "070",
-        "Diamond Bank": "063",
-        "Union Bank": "032",
-        "Wema Bank": "035",
-        "Skye Bank": "076",
-        "Sterling Bank": "232",
-        "Standard Chartered Bank": "068",
-        "Citibank Nigeria": "023",
-        "Keystone Bank": "082",
-        "Unity Bank": "215",
-        "Jaiz Bank": "301",
-        "Suntrust Bank": "100",
-        "Providus Bank": "101",
-        "VFD Microfinance Bank": "080",
-        "Heritage Bank": "030",
-        "Polaris Bank": "076",
-        "Titan Trust Bank": "313",
-        "MFB Bank": "500",
-        "Mainstreet Bank": "070",
-        "FBNQuest Merchant Bank": "091",
-        "Rand Merchant Bank": "077",
-        "Opay": "999",
-        "Moniepoint": "223",
-        "Taj Bank": "318",
-    }
-    return bank_mapping.get(bank_name)
 
-
-
-
-# Consolidated Wallet Transaction View for Web (Form-based)
-@login_required
-def wallet_transaction_view(request):
-    wallet = get_object_or_404(Wallet, user=request.user)
-    if request.method == 'POST':
-        form = WalletForm(request.POST, initial={'wallet': wallet})
-        if form.is_valid():
-            transaction_type = form.cleaned_data['transaction_type']
-            amount = form.cleaned_data['amount']
-
-            if transaction_type == 'add':
-                wallet.balance += amount
-                wallet.save()
-                messages.success(request, f'You have successfully added N{amount} to your wallet.')
-
-            elif transaction_type == 'withdraw' and wallet.balance >= amount:
-                wallet.balance -= amount
-                wallet.save()
-                messages.success(request, f'You have successfully withdrawn N{amount} from your wallet.')
-            elif transaction_type == 'withdraw' and wallet.balance < amount:
-                messages.error(request, 'Insufficient funds in your wallet.')
-
-            return redirect('transactions:wallet_transaction')
-    else:
-        form = WalletForm(initial={'wallet': wallet})
-
-    return render(request, 'transactions/wallet_transaction.html', {'form': form})
-
-
-
-
-
-import requests
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-PAYSTACK_SECRET = os.getenv('PAYSTACK_SECRET_KEY')
-HEADERS = {
-    'Authorization': f'Bearer {PAYSTACK_SECRET}',
-    'Content-Type': 'application/json'
-}
-
-def create_transfer_recipient(account_number, bank_code, account_name):
-    url = 'https://api.paystack.co/transferrecipient'
-    payload = {
-        "type": "nuban",
-        "name": account_name,
-        "account_number": account_number,
-        "bank_code": bank_code,
-        "currency": "NGN"
-    }
-    response = requests.post(url, json=payload, headers=HEADERS)
-    return response.json()
-
-def initiate_transfer(amount, recipient_code, reason="Wallet Withdrawal"):
-    url = 'https://api.paystack.co/transfer'
-    payload = {
-        "source": "balance",
-        "amount": int(amount * 100),  # Paystack uses kobo
-        "recipient": recipient_code,
-        "reason": reason
-    }
-    response = requests.post(url, json=payload, headers=HEADERS)
-    return response.json()
-
-
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from .models import UserBank, Transaction
-from django.contrib.auth.decorators import login_required
-from decimal import Decimal
-from .utils import create_transfer_recipient, initiate_transfer
-
-@login_required
-@csrf_exempt
-def withdraw_to_bank(request):
-    if request.method == 'POST':
-        bank_id = request.POST.get('bank_id')
-        amount = Decimal(request.POST.get('amount'))
-
-        bank = UserBank.objects.get(id=bank_id, user=request.user)
-        current_balance = bank.get_balance()
-
-        if amount > current_balance:
-            return JsonResponse({'status': False, 'message': 'Insufficient funds'})
-
-        # Create Paystack recipient
-        recipient_response = create_transfer_recipient(
-            bank.account_number, bank.bank_code, bank.account_name
-        )
-
-        if not recipient_response['status']:
-            return JsonResponse({'status': False, 'message': recipient_response['message']})
-
-        recipient_code = recipient_response['data']['recipient_code']
-
-        # Initiate transfer
-        transfer_response = initiate_transfer(amount, recipient_code)
-
-        if transfer_response['status']:
-            # Deduct from wallet manually (implement your balance logic)
-            # bank.balance -= amount
-            # bank.save()
-
-            # Log transaction
-            Transaction.objects.create(
-                user=request.user,
-                amount=amount,
-                bank_name=bank.bank_name,
-                account_number=bank.account_number,
-                status="Pending",
-                reference=transfer_response['data']['reference']
-            )
-            return JsonResponse({'status': True, 'message': 'Transfer initiated successfully'})
-        else:
-            return JsonResponse({'status': False, 'message': transfer_response['message']})
-    return JsonResponse({'status': False, 'message': 'Invalid request method'})
 
 
 # Change Password View
@@ -1699,3 +1754,40 @@ def pay_for_service(request):
         }
         res = requests.post('https://api.paystack.co/transaction/initialize', headers=headers, json=data)
         return JsonResponse(res.json())
+
+
+import requests
+from django.conf import settings
+from django.http import JsonResponse
+
+def verify_account(request):
+    account_number = request.GET.get('account_number')
+    bank_code = request.GET.get('bank_code')
+
+    if not account_number or not bank_code:
+        return JsonResponse({'status': 'error', 'message': 'Account number and bank code are required.'}, status=400)
+
+    headers = {
+        'Authorization': f'Bearer {settings.PAYSTACK_SECRET_KEY}',
+        'Content-Type': 'application/json',
+    }
+    
+    # Send request to Paystack's verify account endpoint
+    response = requests.get(
+        f'https://api.paystack.co/transferrecipient/verify?account_number={account_number}&bank_code={bank_code}',
+        headers=headers
+    )
+
+    if response.status_code == 200:
+        data = response.json()
+        if data['status'] == 'success':
+            # If the account is valid, return the account name and bank name
+            return JsonResponse({
+                'status': 'success',
+                'account_name': data['data']['account_name'],
+                'bank_name': data['data']['bank']['name']  # Get bank name from the response
+            })
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Account not found or invalid.'}, status=400)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Failed to verify account.'}, status=500)

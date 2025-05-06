@@ -6,6 +6,8 @@ from django.contrib.auth import get_user_model
 from decimal import Decimal
 from .models import Profile
 from apps.services.models import Service
+from .validators import validate_positive_amount
+
 
 User = get_user_model()
 
@@ -15,43 +17,153 @@ def validate_positive_amount(value):
         raise ValidationError(_("Amount must be greater than zero."))
     return value
 
-# Define BANK_CHOICES at the module level (before its usage in forms)
+# Define BANK_CHOICES at the module level (alphabetized for clarity)
 BANK_CHOICES = [
     ("ABNGNGA", "Access Bank"),
-    ("FCMBNGNG", "FCMB"),
-    ("ZENITHNG", "Zenith Bank"),
-    ("GTBNGNGA", "GTB"),
-    ("UBANGNG", "UBA"),
-    ("FBNNGNG", "First Bank"),
-    ("SBINNG", "Stanbic IBTC"),
+    ("CARBONGH", "Carbon Bank"),
     ("ECOBANKNG", "Ecobank"),
-    ("WEMANG", "Wema Bank"),
+    ("EYOWO", "Eyowo"),
+    ("FCMBNGNG", "FCMB"),
     ("FBNGNNG", "Fidelity Bank"),
-    ("POLARISNG", "Polaris Bank"),
-    ("KEYSTONE", "Keystone Bank"),
-    ("UNIONNGB", "Union Bank"),
-    ("UNITYBANK", "Unity Bank"),
-    ("STERLINGNG", "Sterling Bank"),
-    ("JAIZBANKNG", "Jaiz Bank"),
-    ("STBNAFRICA", "Suntrust Bank"),
-    ("RUBIESBANK", "Rubies Bank"),
-    ("KUDAMFNB", "Kuda Bank"),
-    ("VFDMICRO", "VFD Microfinance Bank"),
-    ("TAJNG", "Taj Bank"),
+    ("FBNNGNG", "First Bank"),
     ("GLOBUSBANK", "Globus Bank"),
+    ("GTBNGNGA", "GTB"),
+    ("JAIZBANKNG", "Jaiz Bank"),
+    ("KEYSTONE", "Keystone Bank"),
+    ("KUDAMFNB", "Kuda Bank"),
+    ("LOTUSBANK", "Lotus Bank"),
+    ("MINTBANK", "Mint Bank"),
+    ("MONIEPOINT", "MoniePoint"),
+    ("OPAYNG", "Opay"),
+    ("OPAYPAYCOM", "Paycom"),
+    ("PALMPAY", "PalmPay"),
+    ("PARALLEX", "Parallex Bank"),
+    ("POLARISNG", "Polaris Bank"),
     ("PROVIDUSBANK", "Providus Bank"),
     ("RMBNG", "Rand Merchant Bank"),
+    ("RUBIESBANK", "Rubies Bank"),
+    ("SBINNG", "Stanbic IBTC"),
     ("SCBNA", "Standard Chartered Bank"),
-    ("LOTUSBANK", "Lotus Bank"),
-    ("PARALLEX", "Parallex Bank"),
-    ("OPAYNG", "Opay"),
-    ("PALMPAY", "PalmPay"),
-    ("CARBONGH", "Carbon Bank"),
-    ("OPAYPAYCOM", "Paycom"),
-    ("MINTBANK", "Mint Bank"),
-    ("EYOWO", "Eyowo"),
-    ("MONIEPOINT", "MoniePoint"),
+    ("STERLINGNG", "Sterling Bank"),
+    ("STBNAFRICA", "Suntrust Bank"),
+    ("TAJNG", "Taj Bank"),
+    ("UBANGNG", "UBA"),
+    ("UNIONNGB", "Union Bank"),
+    ("UNITYBANK", "Unity Bank"),
+    ("VFDMICRO", "VFD Microfinance Bank"),
+    ("WEMANG", "Wema Bank"),
+    ("ZENITHNG", "Zenith Bank"),
 ]
+
+
+from django import forms
+from .validators import validate_positive_amount  # Assuming you have a custom validator
+
+class BankTransferForm(forms.Form):
+   
+    account_number = forms.CharField(
+        max_length=20,
+        required=True,
+        label="Recipient Account Number",
+        widget=forms.TextInput(attrs={'placeholder': 'Enter Account Number'})
+    )
+    amount = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=True,
+        label="Amount",
+        validators=[validate_positive_amount],
+        widget=forms.NumberInput(attrs={'placeholder': 'Enter Amount'})
+    )
+    transfer_note = forms.CharField(
+        widget=forms.Textarea(attrs={'placeholder': 'Add a note (optional)', 'rows': 3}),
+        required=False,
+        label="Transfer Note (optional)"
+    )
+    recipient_name = forms.CharField(
+        max_length=255,
+        required=True,
+        label="Recipient Name",
+        widget=forms.TextInput(attrs={'placeholder': 'Enter Recipient Name'})
+    )
+    transaction_reference = forms.CharField(
+        max_length=100,
+        required=True,
+        label="Transaction Reference",
+        widget=forms.TextInput(attrs={'placeholder': 'Auto-generated or custom reference'})
+    )
+    transfer_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="Transfer Date"
+    )
+    currency = forms.ChoiceField(
+        choices=[('NGN', 'NGN'), ('EUR', 'EUR'), ('USD', 'USD'), ('GBP', 'GBP')],
+        initial='NGN',
+        required=True,
+        label="Currency"
+    )
+    recipient_phone = forms.CharField(
+        max_length=15,
+        required=False,
+        label="Recipient Phone Number",
+        widget=forms.TextInput(attrs={'placeholder': 'Optional'})
+    )
+    recipient_email = forms.EmailField(
+        required=False,
+        label="Recipient Email",
+        widget=forms.EmailInput(attrs={'placeholder': 'Optional'})
+    )
+    confirm_transfer = forms.BooleanField(
+        required=True,
+        label="I confirm that the transfer details are correct"
+    )
+    bank_code = forms.ChoiceField(
+        choices=[('', 'Select a Bank')] + BANK_CHOICES,  # Make sure BANK_CHOICES is defined
+        required=True,
+        label="Bank"
+    )
+
+
+from django import forms
+from .models import WalletTransfer
+
+class WalletTransferForm(forms.ModelForm):
+    class Meta:
+        model = WalletTransfer
+        fields = ['wallet_id', 'amount', 'transfer_note']
+
+    wallet_id = forms.CharField(
+        max_length=30,
+        required=True,
+        label="Recipient Wallet ID",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Wallet ID'})
+    )
+    
+    amount = forms.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter amount'})
+    )
+    
+    transfer_note = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Optional transfer note', 'rows': 3}),
+        required=False
+    )
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount <= 0:
+            raise forms.ValidationError("Amount must be greater than zero.")
+        return amount
+
+    def clean_wallet_id(self):
+        wallet_id = self.cleaned_data.get('wallet_id')
+        if not wallet_id:
+            raise forms.ValidationError("Wallet ID is required.")
+        return wallet_id
+
+
 
 class AddMoneyForm(forms.Form):
     amount = forms.DecimalField(max_digits=10, decimal_places=2)
@@ -284,25 +396,7 @@ class PayWithWalletForm(forms.Form):
             raise ValidationError("Amount must be greater than zero.")
         return amount
 
-class TransferForm(forms.Form):
-    wallet_id = forms.CharField(max_length=30, label="Recipient Wallet ID")
-    amount = forms.DecimalField(max_digits=10, decimal_places=2, label="Amount")
-    transfer_note = forms.CharField(widget=forms.Textarea, required=False, label="Transfer Note (optional)")
-    recipient_name = forms.CharField(max_length=255, required=True, label="Recipient Name")
-    transaction_reference = forms.CharField(max_length=100, required=True, label="Transaction Reference")
-    transfer_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}), label="Transfer Date")
-    currency = forms.ChoiceField(choices=[('USD', 'USD'), ('EUR', 'EUR'), ('NGN', 'NGN'), ('GBP', 'GBP')], initial='USD', label="Currency")
-    recipient_phone = forms.CharField(max_length=15, required=False, label="Recipient Phone Number")
-    recipient_email = forms.EmailField(required=False, label="Recipient Email")
-    confirm_transfer = forms.BooleanField(required=True, label="I confirm that the transfer details are correct")
 
-    def clean_amount(self):
-        return self.validate_positive_amount(self.cleaned_data.get('amount'))
-
-    def validate_positive_amount(self, amount):
-        if amount <= 0:
-            raise ValidationError("Amount must be greater than zero.")
-        return amount
 
 class BankForm(forms.Form):
     bank_name = forms.ChoiceField(choices=BANK_CHOICES, required=True, label="Select Bank")

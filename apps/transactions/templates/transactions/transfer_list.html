@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container">
+    <h2>Choose Transfer Type</h2>
+    <div class="transfer-options">
+        <a href="{% url 'transactions:wallet_transfer' %}" class="btn btn-primary">To QuickFinance</a>
+        <a href="{% url 'transactions:bank_transfer' %}" class="btn btn-primary">To Bank</a>
+    </div>
+</div>
+
+<style>
+    .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        text-align: center;
+    }
+    .transfer-options {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 30px;
+    }
+    .btn {
+        background-color: #007bff;
+        color: white;
+        padding: 15px 25px;
+        border: none;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 16px;
+        transition: background-color 0.3s;
+    }
+    .btn:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+{% endblock %}

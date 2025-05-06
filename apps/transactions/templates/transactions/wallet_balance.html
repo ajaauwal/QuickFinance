@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-
+{% load humanize %}
 {% block content %}
 
 <div class="video-background">
@@ -16,8 +16,7 @@
         <span class="close-btn" onclick="closeWalletForm()">×</span>
         <h2>Wallet</h2>
 
-        {% load humanize %}
-        <!-- Display balance with commas -->
+        <!-- Dynamic Wallet Balance -->
         <div class="wallet-info">
             <p id="wallet-balance">Balance: NGN{{ wallet.balance|intcomma }}</p>
         </div>
@@ -205,13 +204,34 @@
 </style>
 
 <script>
+
     function closeWalletForm() {
         document.querySelector('.wallet-container').style.display = 'none';
     }
 
-    function updateWallet(amount) {
-        alert('Transaction initiated with amount: NGN ' + amount);
+    // Auto-update wallet balance every 5 seconds
+    function fetchWalletBalance() {
+        fetch("{% url 'wallet_balance' %}")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.balance !== undefined) {
+                    // Format the balance with commas (optional: you can improve this)
+                    let formattedBalance = new Intl.NumberFormat().format(data.balance);
+                    document.getElementById('wallet-balance').innerText = 'Balance: NGN' + formattedBalance;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching wallet balance:', error);
+            });
     }
+
+    // Start polling every 5 seconds
+    setInterval(fetchWalletBalance, 5000);
 </script>
 
 {% endblock %}

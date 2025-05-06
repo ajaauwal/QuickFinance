@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="transfer-container">
+    <h2 class="title">🚀 To Bank</h2>
+    <form method="post" class="transfer-form">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="bank_name" class="form-label">Bank Name <span class="required">*</span></label>
+            <select name="bank_name" id="bank_name" class="form-control" required>
+                <option value="">Loading banks...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="account_number" class="form-label">Account Number <span class="required">*</span></label>
+            <input type="text" name="account_number" id="account_number" class="form-control" placeholder="Enter account number" required>
+        </div>
+
+        <div class="form-group">
+            <label for="account_name" class="form-label">Account Name</label>
+            <input type="text" name="account_name" id="account_name" class="form-control" placeholder="Enter account holder's name">
+        </div>
+
+        <div class="form-group">
+            <label for="amount" class="form-label">Amount <span class="required">*</span></label>
+            <input type="number" name="amount" id="amount" class="form-control" placeholder="₦ 0.00" min="1" step="0.01" required>
+        </div>
+
+        <div class="form-group">
+            <label for="note" class="form-label">Note</label>
+            <textarea name="note" id="note" class="form-control" placeholder="E.g., Payment for services (optional)"></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit">💸 Transfer Now</button>
+    </form>
+</div>
+
+<style>
+    .transfer-container {
+        max-width: 500px;
+        margin: 40px auto;
+        padding: 30px;
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        transition: box-shadow 0.3s ease;
+    }
+    .transfer-container:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+    .title {
+        text-align: center;
+        font-size: 26px;
+        font-weight: 700;
+        margin-bottom: 25px;
+        color: #05445E; /* Deep ocean blue */
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #055C7F; /* Mid-tone ocean blue */
+    }
+    .required {
+        color: red;
+        font-size: 14px;
+    }
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 15px;
+        border: 1px solid #cfe5f2;
+        border-radius: 8px;
+        transition: border-color 0.3s, box-shadow 0.3s;
+        background-color: #f9fcfe;
+    }
+    .form-control:focus {
+        border-color: #38B6FF; /* Bright ocean blue */
+        box-shadow: 0 0 5px rgba(56, 182, 255, 0.4);
+        outline: none;
+    }
+    textarea.form-control {
+        resize: vertical;
+        min-height: 80px;
+    }
+    .btn-submit {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(135deg, #38B6FF, #0093E9); /* Ocean gradient */
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.2s;
+    }
+    .btn-submit:hover {
+        background: linear-gradient(135deg, #0093E9, #006FBB);
+        transform: translateY(-2px);
+    }
+    .btn-submit:active {
+        transform: translateY(0);
+    }
+    @media (max-width: 600px) {
+        .transfer-container {
+            padding: 20px;
+            margin: 20px;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const bankSelect = document.getElementById('bank_name');
+    
+    fetch('https://api.paystack.co/bank?currency=NGN')
+        .then(response => response.json())
+        .then(data => {
+            bankSelect.innerHTML = '<option value="">Select Bank</option>';
+            if (data.status && data.data) {
+                data.data.forEach(bank => {
+                    const option = document.createElement('option');
+                    option.value = bank.code;
+                    option.textContent = bank.name;
+                    bankSelect.appendChild(option);
+                });
+            } else {
+                bankSelect.innerHTML = '<option value="">Unable to load banks</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching banks:', error);
+            bankSelect.innerHTML = '<option value="">Failed to load banks</option>';
+        });
+});
+</script>
+
+{% endblock %}

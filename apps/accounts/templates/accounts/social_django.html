@@ -1,43 +1,32 @@
-{% extends "base.html" %}
+{% extends "base.html" %}  <!-- Extend your base layout template -->
 
 {% block content %}
-<div class="container d-flex justify-content-center align-items-center min-vh-100">
-    <div class="card shadow-lg p-4" style="max-width: 450px; width: 100%; border-radius: 12px;">
-        <div class="text-center mb-3">
-            <h2 class="text-primary">Social Login</h2>
-            <p class="text-muted">Welcome! Log in using your social account.</p>
-        </div>
+<div class="container">
+    <h2>Social Login</h2>
+    <p>Welcome! Please log in using your social account.</p>
 
-        <form method="post" action="{% url 'social_django' %}">
-            {% csrf_token %}
-            
-            <div class="mb-3">
-                <label for="provider" class="form-label fw-bold">Choose Provider:</label>
-                <select name="provider" id="provider" class="form-select">
-                    <option value="google">Google</option>
-                    <option value="facebook">Facebook</option>
-                    <!-- Add more providers if needed -->
-                </select>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100">
-                <i class="fas fa-sign-in-alt me-2"></i> Login with Social Account
-            </button>
-        </form>
-
-        {% if user.is_authenticated %}
-        <div class="alert alert-success mt-3 text-center">
-            <strong>Success!</strong> Logged in as <b>{{ user.username }}</b>.
+    <!-- You can add custom logic or details here -->
+    <form method="post" action="{% url 'social_django' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="provider">Choose Provider:</label>
+            <select name="provider" id="provider" class="form-control">
+                <option value="facebook">Facebook</option>
+                <option value="google">Google</option>
+                <!-- Add more providers if needed -->
+            </select>
         </div>
-        {% else %}
-        <div class="alert alert-info mt-3 text-center">
-            <strong>Notice:</strong> Please log in to continue.
-        </div>
-        {% endif %}
+        <button type="submit" class="btn btn-primary">Login with Social Account</button>
+    </form>
+
+    {% if user.is_authenticated %}
+    <div class="alert alert-success mt-3">
+        <strong>Success!</strong> You are logged in as {{ user.username }}.
     </div>
+    {% else %}
+    <div class="alert alert-info mt-3">
+        <strong>Notice:</strong> Please log in to proceed.
+    </div>
+    {% endif %}
 </div>
-
-<!-- Font Awesome for icons (if not already included in base.html) -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
 {% endblock %}

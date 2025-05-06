@@ -58,6 +58,8 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    'crispy_forms',
+    'widget_tweaks',
 ]
 
 # Enable debug toolbar only in DEBUG mode
@@ -143,7 +145,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Email configuration
-EMAIL_BACKEND = env('EMAIL_BACKEND')
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = env('EMAIL_HOST')
 EMAIL_PORT = env.int('EMAIL_PORT')
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS')
@@ -181,17 +183,15 @@ SESSION_COOKIE_SECURE = env.bool("DJANGO_SESSION_COOKIE_SECURE", default=True)
 CSRF_COOKIE_SECURE = env.bool("DJANGO_CSRF_COOKIE_SECURE", default=True)
 
 # VTpass API settings
-VTPASS_USERNAME = env('VTPASS_USERNAME')
-VTPASS_PASSWORD = env('VTPASS_PASSWORD')
-VTPASS_BASE_URL = env('VTPASS_BASE_URL')
-VTPASS_SERVICE_API_KEY = env('VTPASS_SERVICE_API_KEY')
-VTPASS_PUBLIC_KEY = env('VTPASS_PUBLIC_KEY')
-VTPASS_SECRET_KEY = env('VTPASS_SECRET_KEY')
-
+VTPASS_USERNAME = env('VTPASS_USERNAME', default='')
+VTPASS_PASSWORD = env('VTPASS_PASSWORD', default='')
+VTPASS_BASE_URL = env('VTPASS_BASE_URL', default='')
+VTPASS_SERVICE_API_KEY = env('VTPASS_SERVICE_API_KEY', default='')
+VTPASS_PUBLIC_KEY = env('VTPASS_PUBLIC_KEY', default='')
+VTPASS_SECRET_KEY = env('VTPASS_SECRET_KEY', default='')
 
 AMADEUS_API_KEY = env('AMADEUS_API_KEY', default='')
 AMADEUS_API_SECRET = env('AMADEUS_API_SECRET', default='')
-AMADEUS_BASE_URL = env('AMADEUS_BASE_URL', default='https://test.api.amadeus.com/v1')
 
 PAYSTACK_PUBLIC_KEY = env('PAYSTACK_PUBLIC_KEY', default='')
 PAYSTACK_SECRET_KEY = env('PAYSTACK_SECRET_KEY', default='')
@@ -211,8 +211,11 @@ OTP_EXPIRY_SECONDS = env.int('OTP_EXPIRY_SECONDS', default=30)
 INTERNAL_IPS = ['127.0.0.1']
 
 # Social Authentication
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', default='')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET', default='')
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env('GOOGLE_CLIENT_ID')  # Corrected to use 'env'
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env('GOOGLE_CLIENT_SECRET')  # Corrected to use 'env'
+
+ACCOUNT_SIGNUP_REDIRECT_URL = '/accounts/login/'
+SOCIAL_AUTH_NEW_USER_REDIRECT_URL = '/accounts/social/login/'
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
@@ -220,3 +223,16 @@ SOCIALACCOUNT_PROVIDERS = {
         'AUTH_PARAMS': {'access_type': 'online'},
     },
 }
+
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.auth_allowed',
+    'social_core.pipeline.social_auth.social_user',
+    'accounts.pipeline.prevent_login_existing_user',  # 👈 now using your correct app path
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+)

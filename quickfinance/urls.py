@@ -36,7 +36,7 @@ urlpatterns = [
     path('notifications/', include('apps.notifications.urls')),  # Notifications app URLs
 
     # Social authentication URLs
-    path('social-auth/', include('social_django.urls', namespace='social')),
+    path('accounts/', include('allauth.urls')),
 
     # Swagger UI routes
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-ui'),

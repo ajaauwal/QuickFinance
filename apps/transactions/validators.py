@@ -1,7 +1,9 @@
+# apps/transactions/validators.py
+
 from decimal import Decimal
 from django.core.exceptions import ValidationError
 
-def validate_transaction_amount(amount, user=None):
+def validate_positive_amount(amount, user=None):
     """
     Validates the transaction amount.
 

@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="wallet-transfer-container">
+    <h2 class="transfer-title">To QuickFinance</h2>
+    <form method="post" class="wallet-transfer-form">
+        {% csrf_token %}
+        
+        <!-- Hidden field for service_type -->
+        <input type="hidden" name="service_type" value="wallet_to_wallet">
+        
+        <div class="form-group">
+            <label for="recipient_wallet_id" class="form-label">Recipient Wallet ID</label>
+            <input type="text" name="recipient_wallet_id" id="recipient_wallet_id" class="form-control" placeholder="Enter recipient's Wallet ID" required>
+        </div>
+
+        <div class="form-group">
+            <label for="amount" class="form-label">Amount</label>
+            <input type="number" name="amount" id="amount" class="form-control" placeholder="Enter amount" min="1" step="0.01" required>
+        </div>
+
+        <div class="form-group">
+            <label for="note" class="form-label">Note <span class="optional">(optional)</span></label>
+            <textarea name="note" id="note" class="form-control" placeholder="Add a note if needed..."></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit">Transfer Now</button>
+    </form>
+</div>
+
+<style>
+    .wallet-transfer-container {
+        max-width: 450px;
+        margin: 40px auto;
+        padding: 30px;
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        animation: fadeIn 0.5s ease;
+    }
+
+    .transfer-title {
+        text-align: center;
+        margin-bottom: 25px;
+        font-size: 26px;
+        font-weight: 600;
+        color: #05445E; /* Deep ocean blue */
+    }
+
+    .wallet-transfer-form .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #055C7F; /* Mid-tone ocean blue */
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 14px;
+        font-size: 15px;
+        border: 1px solid #cfe5f2;
+        border-radius: 8px;
+        transition: border-color 0.3s, box-shadow 0.3s;
+        background-color: #f9fcfe;
+    }
+
+    .form-control:focus {
+        border-color: #38B6FF; /* Bright ocean blue */
+        box-shadow: 0 0 5px rgba(56, 182, 255, 0.4);
+        outline: none;
+    }
+
+    .optional {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(45deg, #38B6FF, #0093E9); /* Ocean gradient */
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.2s;
+    }
+
+    .btn-submit:hover {
+        background: linear-gradient(45deg, #0093E9, #006FBB);
+        transform: translateY(-2px);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+{% endblock %}

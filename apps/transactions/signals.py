@@ -9,7 +9,7 @@ import logging
 import traceback
 
 from .models import Profile, Wallet, Transaction
-from .utils import send_transaction_email, send_failure_email
+from .utils import send_transaction_email, send_failure_email, update_user_wallet_balance
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -57,25 +57,36 @@ def update_user_profile_and_wallet(sender, instance, created, **kwargs):
             logger.error(f"❌ Error updating profile or wallet for user {instance.username}: {e}")
             logger.debug(traceback.format_exc())
 
+
+
 # 💸 Handle transaction logic and update wallet
 @receiver(post_save, sender=Transaction)
 def handle_transaction(sender, instance, created, **kwargs):
     try:
+        # 🟢 This checks if the transaction was just created
         if created:
             logger.info(f"📥 New transaction created: {instance.id} by {instance.user.username}")
 
+            # We DO NOT immediately credit if it's pending—just wait for it to become completed
             if instance.status == 'Pending':
-                instance.status = 'Completed'
-                instance.save()
-                logger.info(f"✅ Transaction {instance.id} marked as Completed")
-                send_transaction_email(instance)
+                logger.info(f"🕒 Transaction {instance.id} is pending. Waiting for completion.")
+                # Possibly send a 'payment pending' email if needed
 
-            update_user_wallet_balance(instance.wallet, instance.amount, 'credit')
+            elif instance.status == 'Completed':
+                logger.info(f"✅ Transaction {instance.id} created as Completed. Crediting wallet.")
+                update_user_wallet_balance(instance.wallet, instance.amount, 'credit')
+                send_transaction_email(instance)
 
         else:
             logger.info(f"🔄 Transaction {instance.id} was updated.")
+            # Only credit if status changed to Completed after update
             if instance.status == 'Completed':
+                # Check if wallet has already been credited (to prevent double credit)
+                if not instance.wallet.transactions.filter(id=instance.id, status='Completed').exists():
+                    logger.info(f"✅ Transaction {instance.id} is now Completed (via update). Crediting wallet.")
+                    update_user_wallet_balance(instance.wallet, instance.amount, 'credit')
                 send_transaction_email(instance)
+
             elif instance.status == 'Failed':
                 send_failure_email(instance)
 
@@ -83,21 +94,29 @@ def handle_transaction(sender, instance, created, **kwargs):
         logger.error(f"❌ Error handling transaction {instance.id}: {e}")
         logger.debug(traceback.format_exc())
 
-# 🧮 Wallet balance updater
-def update_user_wallet_balance(wallet, amount, transaction_type):
-    if wallet is None:
-        raise ValueError("❗ Wallet does not exist for the user.")
 
-    amount = Decimal(amount)
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .models import WalletTransfer, BankTransfer, Transfer
 
-    if transaction_type == 'credit':
-        wallet.balance += amount
-    elif transaction_type == 'debit':
-        if wallet.balance >= amount:
-            wallet.balance -= amount
-        else:
-            raise ValueError("❌ Insufficient funds for debit transaction.")
-    else:
-        raise ValueError("❌ Invalid transaction type specified.")
+@receiver(post_save, sender=WalletTransfer)
+def create_transfer_for_wallet(sender, instance, created, **kwargs):
+    if created:
+        Transfer.objects.create(
+            user=instance.sender,
+            transfer_type='wallet',
+            amount=instance.amount,
+            related_id=instance.id,
+            status=instance.status
+        )
 
-    wallet.save()
+@receiver(post_save, sender=BankTransfer)
+def create_transfer_for_bank(sender, instance, created, **kwargs):
+    if created:
+        Transfer.objects.create(
+            user=instance.user,
+            transfer_type='bank',
+            amount=instance.amount,
+            related_id=instance.id,
+            status=instance.status
+        )
